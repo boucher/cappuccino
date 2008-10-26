@@ -129,6 +129,13 @@ CPOtherMouseUp                          = 26;
     @group CPEventType
 */
 CPOtherMouseDragged                     = 27;
+
+// iPhone Event Types
+CPTouchStart                            = 28;
+CPTouchMove                             = 29;
+CPTouchEnd                              = 30;
+CPTouchCancel                           = 31;
+                                        
                                         
 CPAlphaShiftKeyMask                     = 1 << 16;
 CPShiftKeyMask                          = 1 << 17;
@@ -174,6 +181,10 @@ CPDOMEventKeyPress                      = "keypress";
 CPDOMEventCopy                          = "copy";
 CPDOMEventPaste                         = "paste";
 CPDOMEventScrollWheel                   = "mousewheel";
+CPDOMEventTouchStart                    = "touchstart";
+CPDOMEventTouchMove                     = "touchmove";
+CPDOMEventTouchEnd                      = "touchend";
+CPDOMEventTouchCancel                   = "touchcancel";
 
 var _CPEventPeriodicEventPeriod         = 0,
     _CPEventPeriodicEventTimer          = nil;
