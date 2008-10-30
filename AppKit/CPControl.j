@@ -21,7 +21,7 @@
  */
 
 @import "CPFont.j"
-@import "CPShadow.j"
+//@import "CPShadow.j"
 @import "CPView.j"
 
 #include "Platform/Platform.h"

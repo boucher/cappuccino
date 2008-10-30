@@ -24,7 +24,7 @@
 
 @import "CPControl.j"
 @import "CPImage.j"
-@import "CPShadowView.j"
+//@import "CPShadowView.j"
 
 #include "Platform/Platform.h"
 #include "Platform/DOM/CPDOMDisplayServer.h"

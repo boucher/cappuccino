@@ -24,7 +24,7 @@
 @import <Foundation/CPUndoManager.j>
 
 @import "CGGeometry.j"
-@import "CPAnimation.j"
+//@import "CPAnimation.j"
 @import "CPResponder.j"
 
 #include "Platform/Platform.h"
@@ -1703,6 +1703,11 @@ var interpolate = function(fromValue, toValue, progress)
 {
     return fromValue + (toValue - fromValue) * progress;
 }
+
+@implementation CPAnimation : CPObject
+{
+}
+@end
 
 /* @ignore */
 @implementation _CPWindowFrameAnimation : CPAnimation

@@ -24,9 +24,9 @@
 
 @import "CPCompatibility.j"
 @import "CPEvent.j"
-@import "CPMenu.j"
+//@import "CPMenu.j"
 @import "CPResponder.j"
-@import "CPDocumentController.j"
+//@import "CPDocumentController.j"
 
 
 CPApp = nil;
@@ -112,7 +112,7 @@ CPRunContinuesResponse  = -1002;
         _windows = [];
         
         [_windows addObject:nil];
-    
+        /*
         // FIXME: This should be read from the cib.
         _mainMenu = [[CPMenu alloc] initWithTitle:@"MainMenu"];
         
@@ -169,6 +169,7 @@ CPRunContinuesResponse  = -1002;
         [_mainMenu addItem:editMenuItem];
         
         [_mainMenu addItem:[CPMenuItem separatorItem]];
+        */
     }
     
     return self;

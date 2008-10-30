@@ -30,7 +30,7 @@
 @import "CPDOMDisplayServer.j"
 @import "CPGeometry.j"
 @import "CPResponder.j"
-@import "CPGraphicsContext.j"
+//@import "CPGraphicsContext.j"
 
 
 #include "Platform/Platform.h"

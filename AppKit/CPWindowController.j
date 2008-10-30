@@ -25,7 +25,7 @@
 
 @import "CPResponder.j"
 @import "CPWindow.j"
-@import "CPDocument.j"
+//@import "CPDocument.j"
 
 #include "Platform/Platform.h"
 
