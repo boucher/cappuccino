@@ -54,15 +54,19 @@ window.prompt  = function(obj)
 // This implementation is single-threaded (like browsers) but requires a call to serviceTimeouts()
 // Also includes beginning of a multithreaded implementation (commented out)
 
-window.setTimeout = function(callback, delay)
+window.setNativeTimeout = function(callback, delay)
 {
     return _scheduleTimeout(callback, delay, false);
 }
 
-window.setInterval = function(callback, delay)
+window.setTimeout = window.setNativeTimeout;
+
+window.setNativeInterval = function(callback, delay)
 {
     return _scheduleTimeout(callback, delay, true);
 }
+
+window.setInterval = window.setInterval;
 
 window.clearTimeout = function(id)
 {
@@ -314,9 +318,8 @@ if (this.Packages) {
 			try {
 				Packages.java.lang.System.out.print("objj> ");
 			
-				var input = br.readLine();
-				
-				var fragments = objj_preprocess(String(input)),
+				var input = String(br.readLine()),
+				    fragments = objj_preprocess(input, new objj_bundle(), new objj_file(), OBJJ_PREPROCESSOR_DEBUG_SYMBOLS),
 		            count = fragments.length,
 					ctx = (new objj_context);
 
@@ -549,7 +552,7 @@ XMLHttpRequest.prototype.send = function(body)
     if (this.onreadystatechange)
     {
          if (this.async)
-             setTimeout(this.onreadystatechange, 0);
+             setNativeTimeout(this.onreadystatechange, 0);
          else
              this.onreadystatechange();
     }

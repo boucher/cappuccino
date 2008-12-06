@@ -268,7 +268,7 @@ CPRunContinuesResponse  = -1002;
         postNotificationName:CPApplicationDidFinishLaunchingNotification
         object:self];
     
-    [[CPRunLoop currentRunLoop] performSelectors];
+    [[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
 }
 
 /*!

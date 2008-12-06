@@ -35,6 +35,11 @@ CPSharedDOMWindowBridge = nil;
 
 var ExcludedDOMElements = [];
 
+// Define up here so compressor knows about em.
+var CPDOMWindowGetFrame,
+    CPDOMEventGetClickCount,
+    CPDOMEventStop;
+
 @implementation CPDOMWindowBridge : CPObject
 {
     CPArray         _orderedWindows;
@@ -563,8 +568,8 @@ var CTRL_KEY_CODE   = 17;
             
         if (StopDOMEventPropagation)
             CPDOMEventStop(aDOMEvent);
-        
-        [[CPRunLoop currentRunLoop] performSelectors];
+            
+        [[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
     }
     catch (anException)
     {
@@ -709,8 +714,8 @@ var CTRL_KEY_CODE   = 17;
             
         if (StopDOMEventPropagation)
             CPDOMEventStop(aDOMEvent);
-
-        [[CPRunLoop currentRunLoop] performSelectors];
+            
+        [[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
     }
     catch (anException)
     {
@@ -780,8 +785,8 @@ var CTRL_KEY_CODE   = 17;
             
         if (StopDOMEventPropagation)
             CPDOMEventStop(aDOMEvent);
-
-        [[CPRunLoop currentRunLoop] performSelectors];
+            
+        [[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
     }
     catch (anException)
     {
@@ -820,8 +825,7 @@ var CTRL_KEY_CODE   = 17;
         
         //window.liveResize = NO;
         
-        [[CPRunLoop currentRunLoop] performSelectors];
-    
+        [[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
     }
     catch (anException)
     {
@@ -918,7 +922,7 @@ var CTRL_KEY_CODE   = 17;
         
         _pasteboardKeyDownEvent = nil;
         
-        [[CPRunLoop currentRunLoop] performSelectors];
+        [[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
     }
     catch (anException)
     {

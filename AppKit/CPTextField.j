@@ -403,7 +403,7 @@ var _CPTextFieldSquareBezelColor = nil,
         [self setObjectValue:element.value];
         [self sendAction:[self action] to:[self target]];
         [[self window] makeFirstResponder:nil];
-        [[CPRunLoop currentRunLoop] performSelectors];
+        [[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
     };
     
     //element.onblur = function() { objj_debug_print_backtrace(); }
@@ -413,8 +413,8 @@ var _CPTextFieldSquareBezelColor = nil,
     {
         //all key presses might trigger the delegate method controlTextDidChange: 
         //record the current string value before we allow this keydown to propagate
-        _textDidChangeValue = [self stringValue];
-        [[CPRunLoop currentRunLoop] performSelectors];
+        _textDidChangeValue = [self stringValue];    
+        [[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
         return true;
     }
         
@@ -431,8 +431,8 @@ var _CPTextFieldSquareBezelColor = nil,
             aDOMEvent.cancelBubble = true;
             
             element.blur();
-        }
-        [[CPRunLoop currentRunLoop] performSelectors];
+        }    
+        [[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
     };
     
     //inspect keyup to detect changes in order to trigger controlTextDidChange: delegate method
@@ -445,8 +445,8 @@ var _CPTextFieldSquareBezelColor = nil,
 
             //call to CPControls methods for posting the notification
             [self textDidChange:[CPNotification notificationWithName:CPControlTextDidChangeNotification object:self userInfo:nil]];
-        }
-        [[CPRunLoop currentRunLoop] performSelectors];
+        }    
+        [[CPRunLoop currentRunLoop] limitDateForMode:CPDefaultRunLoopMode];
     };
 
     // If current value is the placeholder value, remove it to allow user to update.
@@ -577,13 +577,30 @@ var _CPTextFieldSquareBezelColor = nil,
     switch (aLineBreakMode)
     {
         case CPLineBreakByTruncatingTail:   _DOMTextElement.style.textOverflow = "ellipsis";
-                                            _DOMTextElement.style.whiteSpace = "nowrap";
-                                            _DOMTextElement.style.overflow = "hidden";
+                                            _DOMTextElement.style.whiteSpace   = "nowrap";
+                                            _DOMTextElement.style.overflow     = "hidden";
+                                            
+                                            if (document.attachEvent)
+                                                _DOMTextElement.style.wordWrap = "normal";    
+                                                                                            
                                             break;
                                             
-        case CPLineBreakByWordWrapping:     _DOMTextElement.style.whiteSpace = "normal";
-                                            _DOMTextElement.style.overflow = "hidden";
+        case CPLineBreakByWordWrapping:     if (document.attachEvent)
+                                            {                                            
+                                                _DOMTextElement.style.whiteSpace = "pre";
+                                                _DOMTextElement.style.wordWrap   = "break-word";
+                                            }
+                                            else
+                                            {
+                                                _DOMTextElement.style.whiteSpace = "-o-pre-wrap";
+                                                _DOMTextElement.style.whiteSpace = "-pre-wrap";
+                                                _DOMTextElement.style.whiteSpace = "-moz-pre-wrap";
+                                                _DOMTextElement.style.whiteSpace = "pre-wrap";
+                                            }
+
+                                            _DOMTextElement.style.overflow     = "hidden";
                                             _DOMTextElement.style.textOverflow = "clip";
+                                            
                                             break;
     }
 #endif

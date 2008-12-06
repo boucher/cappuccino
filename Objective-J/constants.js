@@ -68,6 +68,11 @@ var NO      = false,
     SQRT1_2 = Math.SQRT1_2,
     SQRT2   = Math.SQRT2;
 
+window.setNativeTimeout = window.setTimeout;
+window.clearNativeTimeout = window.clearTimeout;
+window.setNativeInterval = window.setInterval;
+window.clearNativeInterval = window.clearInterval;
+
 // Detecting Browser Features
 #define ACTIVE_X                window.ActiveXObject
 #define OPERA                   window.opera
@@ -100,10 +105,9 @@ function objj_printf(string)
     objj_fprintf(alert, string);
 }
 
-#if COMPILER
-importPackage(java.lang);
+#if RHINO
 
-warning_stream = function (aString) { System.out.println(aString) };
+warning_stream = function (aString) { Packages.java.lang.System.out.println(aString) };
 
 #else
 if (window.console && window.console.warn)

@@ -5,7 +5,8 @@
 var _CPCibWindowTemplateMinSizeKey          = @"_CPCibWindowTemplateMinSizeKey",
     _CPCibWindowTemplateMaxSizeKey          = @"_CPCibWindowTemplateMaxSizeKey",
     
-    _CPCibWindowTemplateViewClassKey        = @"_CPCibWindowTemplateWindowClassKey",
+    _CPCibWindowTemplateViewClassKey        = @"_CPCibWindowTemplateViewClassKey",
+    _CPCibWindowTemplateWindowClassKey        = @"_CPCibWindowTemplateWindowClassKey",
     
     _CPCibWindowTemplateWindowRectKey       = @"_CPCibWindowTemplateWindowRectKey",
     _CPCibWindowTemplateWindowStyleMaskKey  = @"_CPCibWindowTempatStyleMaskKey",
@@ -18,7 +19,7 @@ var _CPCibWindowTemplateMinSizeKey          = @"_CPCibWindowTemplateMinSizeKey",
     CGSize      _maxSize;
     //CGSize      _screenRect;
     
-    CPString    _viewClass;
+    id          _viewClass;
     //unsigned  _wtFlags;
     CPString    _windowClass;
     CGRect      _windowRect;
@@ -34,12 +35,14 @@ var _CPCibWindowTemplateMinSizeKey          = @"_CPCibWindowTemplateMinSizeKey",
     
     if (self)
     {
-        _minSize = [aCoder decodeSizeForKey:_CPCibWindowTemplateMinSizeKey];
-        _maxSize = [aCoder decodeSizeForKey:_CPCibWindowTemplateMaxSizeKey];
+        if ([aCoder containsValueForKey:_CPCibWindowTemplateMinSizeKey])
+            _minSize = [aCoder decodeSizeForKey:_CPCibWindowTemplateMinSizeKey];
+        if ([aCoder containsValueForKey:_CPCibWindowTemplateMaxSizeKey])
+            _maxSize = [aCoder decodeSizeForKey:_CPCibWindowTemplateMaxSizeKey];
     
         _viewClass = [aCoder decodeObjectForKey:_CPCibWindowTemplateViewClassKey];
         
-        _windowClass = [aCoder decodeObjectForKey:_CPCibWindowTemplateViewClassKey];
+        _windowClass = [aCoder decodeObjectForKey:_CPCibWindowTemplateWindowClassKey];
         _windowRect = [aCoder decodeRectForKey:_CPCibWindowTemplateWindowRectKey];
         _windowStyleMask = [aCoder decodeIntForKey:_CPCibWindowTemplateWindowStyleMaskKey];
         
@@ -52,12 +55,14 @@ var _CPCibWindowTemplateMinSizeKey          = @"_CPCibWindowTemplateMinSizeKey",
 
 - (void)encodeWithCoder:(CPCoder)aCoder
 {
-    [aCoder encodeSize:_minSize forKey:_CPCibWindowTemplateMinSizeKey];
-    [aCoder encodeSize:_maxSize forKey:_CPCibWindowTemplateMaxSizeKey];
+    if (_minSize)
+        [aCoder encodeSize:_minSize forKey:_CPCibWindowTemplateMinSizeKey];
+    if (_maxSize)
+        [aCoder encodeSize:_maxSize forKey:_CPCibWindowTemplateMaxSizeKey];
     
     [aCoder encodeObject:_viewClass forKey:_CPCibWindowTemplateViewClassKey];
     
-    [aCoder encodeObject:_windowClass forKey:_CPCibWindowTemplateViewClassKey];
+    [aCoder encodeObject:_windowClass forKey:_CPCibWindowTemplateWindowClassKey];
     [aCoder encodeRect:_windowRect forKey:_CPCibWindowTemplateWindowRectKey];
     [aCoder encodeInt:_windowStyleMask forKey:_CPCibWindowTemplateWindowStyleMaskKey];
     
@@ -73,12 +78,13 @@ var _CPCibWindowTemplateMinSizeKey          = @"_CPCibWindowTemplateMinSizeKey",
         [NSException raise:NSInvalidArgumentException format:@"Unable to locate NSWindow class %@, using NSWindow",_windowClass];
         class=[NSWindow class];*/
         
-    var theWindow = [[windowClass alloc] initWithContentRect:_windowRect styleMask:CPHUDBackgroundWindowMask | CPClosableWindowMask];//styleMask:_windowStyleMask];
-//    alert(CPStringFromRect(_windowRect));
-//    alert(CPStringFromSize(_minSize));
-//    alert(CPStringFromSize(_maxSize));
-    //[theWindow setMinSize:_minSize];
-    //[theWindow setMaxSize:_maxSize];
+    _windowStyleMask = (CPHUDBackgroundWindowMask | CPClosableWindowMask | CPResizableWindowMask);
+    var theWindow = [[windowClass alloc] initWithContentRect:_windowRect styleMask:_windowStyleMask];
+    
+    if (_minSize)
+        [theWindow setMinSize:_minSize];
+    if (_maxSize)
+        [theWindow setMaxSize:_maxSize];
     [theWindow setLevel:CPFloatingWindowLevel];
 
    //[result setHidesOnDeactivate:(_wtFlags&0x80000000)?YES:NO];
@@ -90,6 +96,11 @@ var _CPCibWindowTemplateMinSizeKey          = @"_CPCibWindowTemplateMinSizeKey",
     [theWindow setContentView:_windowView];
 
     [_windowView setAutoresizesSubviews:YES];
+    
+    if ([_viewClass isKindOfClass:[CPToolbar class]])
+    {
+       [theWindow setToolbar:_viewClass];
+    }
     
     return theWindow;
 }

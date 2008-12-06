@@ -39,7 +39,7 @@
     CPFont              _font;
     
     CPCellImagePosition _imagePosition;
-    CPImageScaling      _imageScalng;
+    CPImageScaling      _imageScaling;
     
     CPImage             _image;
     CPString            _title;
@@ -238,6 +238,7 @@
             [_titleField setAlignment:_alignment];
             [_titleField setTextColor:_textColor];
             [_titleField setHidden:_imagePosition == CPImageOnly];
+            [_titleField setHitTests:NO];
             
             [self addSubview:_titleField];
         }

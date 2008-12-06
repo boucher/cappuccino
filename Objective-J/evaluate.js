@@ -133,7 +133,7 @@ objj_context.prototype.schedule = function()
     
     var context = this;
     
-    window.setTimeout(function () { context.evaluate(); }, 0);
+    window.setNativeTimeout(function () { context.evaluate(); }, 0);
 }
 
 objj_context.prototype.pushFragment = function(aFragment)
@@ -202,7 +202,7 @@ function fragment_evaluate_file(aFragment)
         
         // Grab the file's fragments if it has them, or preprocess it if not.
         if (!aFile.fragments)
-            aFile.fragments = objj_preprocess(aFile.contents, aFile.bundle, aFile);
+            aFile.fragments = objj_preprocess(aFile.contents, aFile.bundle, aFile, OBJJ_PREPROCESSOR_DEBUG_SYMBOLS);
         
         var fragments = aFile.fragments,
             count = fragments.length,

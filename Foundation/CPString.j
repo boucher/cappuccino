@@ -90,10 +90,7 @@ var CPStringHashes      = new objj_dictionary();
 */
 + (id)stringWithHash:(unsigned)aHash
 {
-    var zeros = "000000",
-        digits = aHash.toString(16);
-    
-    return zeros.substring(0, zeros.length - digits.length) + digits;
+    return sprintf("%06x", aHash);
 }
 
 /*!
@@ -453,6 +450,21 @@ var CPStringHashes      = new objj_dictionary();
 }
 
 /*!
+    Compares the receiver to the specified string, using options in range.
+    @param aString the string with which to compare the range of the receiver specified by range.
+    @param aMask the options to use for the comparison
+    @param range the range of the receiver over which to perform the comparison. The range must not exceed the bounds of the receiver.
+    @return the result of the comparison
+*/
+- (CPComparisonResult)compare:(CPString)aString options:(int)aMask range:(CPRange)range
+{
+    var lhs = [self substringWithRange:range],
+        rhs = aString;
+
+    return [lhs compare:rhs options:aMask];
+}
+
+/*!
     Returns <code>YES</code> if the receiver starts
     with the specified string. If <code>aString</code>
     is empty, the method will return <code>NO</code>.
@@ -595,13 +607,24 @@ var CPStringHashes      = new objj_dictionary();
 }
 
 /*!
-    Until this is corrected
-    @ignore
+	Deletes the last path component of a string.
+	This method assumes that the string's content is a '/'
+	separated file system path.
 */
 - (CPString)stringByDeletingLastPathComponent
 {
-    // FIXME: this is wrong: a/a/ returns a/a/.
-    return substr(0, lastIndexOf('/') + 1);
+    var path = self,
+        start = length - 1;
+    
+    while (path.charAt(start) === '/')
+        start--;
+    
+    path = path.substr(0, path.lastIndexOf('/', start));
+    
+    if (path === "" && charAt(0) === '/')
+        return '/';
+
+    return path;
 }
 
 - (CPString)stringByStandardizingPath
@@ -622,8 +645,8 @@ String.prototype.isa = CPString;
 
 // sprintf:
 
-var sprintfFormatRegex = new RegExp("([^%]+|%[\\+\\-\\ \\#0]*[0-9\\*]*(.[0-9\\*]+)?[hlL]?[cdieEfgGosuxXpn%@])", "g");
-var sprintfTagRegex = new RegExp("(%)([\\+\\-\\ \\#0]*)([0-9\\*]*)((.[0-9\\*]+)?)([hlL]?)([cdieEfgGosuxXpn%@])");
+var sprintfFormatRegex = new RegExp("([^%]+|%[\\+\\-\\ \\#0]*[0-9\\*]*(.[0-9\\*]+)?[hlL]?[cbBdieEfgGosuxXpn%@])", "g");
+var sprintfTagRegex = new RegExp("(%)([\\+\\-\\ \\#0]*)([0-9\\*]*)((.[0-9\\*]+)?)([hlL]?)([cbBdieEfgGosuxXpn%@])");
 
 /*!
   Creates a new string using C printf-style formatting. First argument should be a constant format string, like ' "float val = %f" ', remaining arguments should be the variables to print the values of, comma-separated.
@@ -683,7 +706,7 @@ function sprintf(format)
 
             var subresult = "";
 
-            if (RegExp("[diufeExXo]").test(specifier))
+            if (RegExp("[bBdiufeExXo]").test(specifier))
             {
                 var num = Number(arguments[arg++]);
 
@@ -727,6 +750,14 @@ function sprintf(format)
                 {
                     var number = String(Math.abs(num).toString(16));
                     var prefix = (flags.indexOf("#") >= 0 && num != 0) ? "0x" : "";
+
+                    subresult = sprintf_justify(sign, prefix, number, "", width, leftJustify, padZeros);
+                }
+
+                if (specifier == "b" || specifier == "B")
+                {
+                    var number = String(Math.abs(num).toString(2));
+                    var prefix = (flags.indexOf("#") >= 0 && num != 0) ? "0b" : "";
 
                     subresult = sprintf_justify(sign, prefix, number, "", width, leftJustify, padZeros);
                 }
