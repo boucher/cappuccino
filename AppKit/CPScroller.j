@@ -211,7 +211,7 @@ var _CPScrollerClassName                            = nil,
 
 // Determining CPScroller Size
 /*!
-    Returns the <objj>CPScroller</objj>'s width for a <objj>CPRegularControlSize</objj>.
+    Returns the CPScroller's width for a CPRegularControlSize.
 */
 + (float)scrollerWidth
 {
@@ -219,7 +219,7 @@ var _CPScrollerClassName                            = nil,
 }
 
 /*!
-    Returns the width of a <objj>CPScroller</objj> for the specified <objj>CPControlSize</objj>.
+    Returns the width of a CPScroller for the specified CPControlSize.
     @param aControlSize the size of a controller to return the width for
 */
 + (float)scrollerWidthForControlSize:(CPControlSize)aControlSize
@@ -691,6 +691,48 @@ var _CPScrollerClassName                            = nil,
 // FIXME: This is a result of the "dumb" code that just makes things transparent when disabled.
 - (void)setEnabled:(BOOL)shouldBeEnabled
 {
+}
+
+@end
+
+var CPScrollerControlSizeKey = "CPScrollerControlSize",
+    CPScrollerKnobProportionKey = "CPScrollerKnobProportion";
+
+@implementation CPScroller (CPCoding)
+
+- (id)initWithCoder:(CPCoder)aCoder
+{
+    if (self = [super initWithCoder:aCoder])
+    {
+        _controlSize = CPRegularControlSize;
+        if ([aCoder containsValueForKey:CPScrollerControlSizeKey])
+            _controlSize = [aCoder decodeIntForKey:CPScrollerControlSizeKey];
+            
+        _knobProportion = 1.0;
+        if ([aCoder containsValueForKey:CPScrollerKnobProportionKey])
+            _knobProportion = [aCoder decodeFloatForKey:CPScrollerKnobProportionKey];
+            
+        _partRects = [];
+        
+        _isHorizontal = CPRectGetWidth([self frame]) > CPRectGetHeight([self frame]);
+        
+        _hitPart = CPScrollerNoPart;
+        
+        [self checkSpaceForParts];
+        [self drawParts];
+        
+        [self layoutSubviews];
+    }
+    
+    return self;
+}
+
+- (void)encodeWithCoder:(CPCoder)aCoder
+{
+    [super encodeWithCoder:aCoder];
+    
+    [aCoder encodeInt:_controlSize forKey:CPScrollerControlSizeKey];
+    [aCoder encodeFloat:_knobProportion forKey:CPScrollerKnobProportionKey];
 }
 
 @end

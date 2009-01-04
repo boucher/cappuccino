@@ -43,17 +43,22 @@ CPTableColumnAutoresizingMask   = 1;
 */
 CPTableColumnUserResizingMask   = 2;
 
+#define PurgableInfoMake(aView, aRow) { view:(aView), row:(aRow) }
+#define PurgableInfoView(anInfo) ((anInfo).view)
+#define PurgableInfoRow(anInfo) ((anInfo).row)
+
 /*! @class CPTableColumn
 
-    An <objj>CPTableColumn</objj> object mainly keeps information about the width of the column, its minimum and maximum width; whether the column can be edited or resized; and the cells used to draw the column header and the data in the column. You can change all these attributes of the column by calling the appropriate methods. Please note that the table column does not hold nor has access to the data to be displayed in the column; this data is maintained in the table view's data source.</p>
+    An CPTableColumn object mainly keeps information about the width of the column, its minimum and maximum width; whether the column can be edited or resized; and the cells used to draw the column header and the data in the column. You can change all these attributes of the column by calling the appropriate methods. Please note that the table column does not hold nor has access to the data to be displayed in the column; this data is maintained in the table view's data source.</p>
     
-    <p>Each <objj>CPTableColumn</objj> object is identified by a <objj>CPString</objj>, called the column identifier. The reason is that, after a column has been added to a table view, the user might move the columns around, so there is a need to identify the columns regardless of its position in the table.
+    <p>Each CPTableColumn object is identified by a CPString, called the column identifier. The reason is that, after a column has been added to a table view, the user might move the columns around, so there is a need to identify the columns regardless of its position in the table.
     
     @ignore
 */
 @implementation CPTableColumn : CPObject
 {
     CPString    _identifier;
+    CPView      _headerView;
     
     CPTableView _tableView;
     
@@ -62,6 +67,12 @@ CPTableColumnUserResizingMask   = 2;
     float       _maxWidth;
     
     unsigned    _resizingMask;
+
+    CPView      _dataView;
+
+    Object      _dataViewData;
+    Object      _dataViewForView;
+    Object      _purgableInfosForDataView;
 }
 
 /*!
@@ -81,8 +92,14 @@ CPTableColumnUserResizingMask   = 2;
         _minWidth = 8.0;
         _maxWidth = 1000.0;
         
-        // FIXME
-        _dataCell = [[CPTextField alloc] initWithFrame:CPRectMakeZero()];
+        _dataViewData = {};
+        _dataViewForView = {};
+        _purgableInfosForDataView = {};
+        
+        [self setDataView:[[CPTextField alloc] initWithFrame:CPRectMakeZero()]];
+        
+        _headerView = [[CPTextField alloc] initWithFrame:CPRectMakeZero()];
+        [_headerView setBackgroundColor:[CPColor greenColor]];
     }
     
     return self;
@@ -229,13 +246,16 @@ CPTableColumnUserResizingMask;
     return _isEditable;
 }
 
+//Setting the column header view
+
 /*!
     Sets the view that draws the column's header.
     @param aHeaderView the view that will draws the column header
 */
-- (void)setHeaderView:(CPView)aHeaderView
+
+- (void)setHeaderView:(CPView)aView
 {
-    _headerView = aHeaderView;
+    _headerView = aView;
 }
 
 /*!
@@ -249,9 +269,21 @@ CPTableColumnUserResizingMask;
 /*!
     Sets the data cell that draws rows in this column.
 */
-- (void)setDataCell:(CPCell)aDataCell
+- (void)setDataCell:(CPView <CPCoding>)aView
 {
-    _dataCell = aDataCell;
+    [self setDataView:aView];
+}
+
+/*
+    Sets the data view that draws rows in this column.
+*/
+- (void)setDataView:(CPView <CPCoding>)aView
+{
+    if (_dataView)
+        _dataViewData[[_dataView hash]] = nil;
+    
+    _dataView = aView;
+    _dataViewData[[aView hash]] = [CPKeyedArchiver archivedDataWithRootObject:aView];
 }
 
 /*!
@@ -259,7 +291,15 @@ CPTableColumnUserResizingMask;
 */
 - (CPCell)dataCell
 {
-    return _dataCell;
+    return _dataView;
+}
+
+/*
+    Returns the data view that draws rows in this column
+*/
+- (CPView)dataView
+{
+    return [self dataCell];
 }
 
 /*!
@@ -270,7 +310,84 @@ CPTableColumnUserResizingMask;
 */
 - (CPCell)dataCellForRow:(int)aRowIndex
 {
-    return [self dataCell];
+    return [self dataView];
+}
+
+- (CPView)dataViewForRow:(int)aRowIndex
+{
+    return [self dataCellForRow:aRowIndex];
+}
+
+- (void)_markViewAsPurgable:(CPView)aView
+{
+    var viewHash = [aView hash],
+        dataViewHash = [_dataViewForView[viewHash] hash];
+    
+    if (!_purgableInfosForDataView[dataViewHash])
+        _purgableInfosForDataView[dataViewHash] = [CPDictionary dictionary];
+    
+    [_purgableInfosForDataView[dataViewHash] setObject:aView forKey:viewHash];
+}
+
+- (void)_markView:(CPView)aView inRow:(unsigned)aRow asPurgable:(BOOL)isPurgable
+{
+    var viewHash = [aView hash],
+        dataViewHash = [_dataViewForView[viewHash] hash];
+    
+    if (!_purgableInfosForDataView[dataViewHash])
+    {
+        if (!isPurgable)
+            return;
+        
+        _purgableInfosForDataView[dataViewHash] = [CPDictionary dictionary];
+    }
+    
+    if (!isPurgable)
+        [_purgableInfosForDataView[dataViewHash] removeObjectForKey:viewHash];
+    else
+        [_purgableInfosForDataView[dataViewHash] setObject:PurgableInfoMake(aView, aRow) forKey:viewHash];
+}
+
+- (CPView)_newDataViewForRow:(int)aRowIndex avoidingRows:(CPRange)rows
+{
+    var view = [self dataViewForRow:aRowIndex],
+        viewHash = [view hash],
+        dataViewHash = [_dataViewForView[viewHash] hash],
+        purgableInfos = _purgableInfosForDataView[dataViewHash];
+    //console.warn("ok, a cell is needed");
+    if (purgableInfos && [purgableInfos count])
+    {//console.warn("yes, inside");
+        var keys = [purgableInfos allKeys],
+            count = keys.length;
+        
+        while (count--)
+        {
+            var key = keys[count],
+                info = [purgableInfos objectForKey:key];
+            
+            [purgableInfos removeObjectForKey:key];
+            
+            if (CPLocationInRange(PurgableInfoRow(info), rows))
+                continue;
+            //console.warn("yes, a purged view is usable, its called" + PurgableInfoView(info));
+            return PurgableInfoView(info);
+        }
+    }
+    
+    var data = _dataViewData[viewHash];
+    
+    if (!data)
+    {
+        _dataViewData[viewHash] = [CPKeyedArchiver archivedDataWithRootObject:view];
+        data = _dataViewData[viewHash];
+    }
+    //console.warn("nope, time for creation");
+    return [CPKeyedUnarchiver unarchiveObjectWithData:data];
 }
 
 @end
+
+_PurgableViewInfoMake = function(aView, aRow)
+{
+    return { view:aView, row:aRow};
+}

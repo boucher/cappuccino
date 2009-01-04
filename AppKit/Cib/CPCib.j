@@ -63,6 +63,17 @@ var CPCibObjectDataKey  = @"CPCibObjectDataKey";
     
     var owner = [anExternalNameTable objectForKey:CPCibOwner],
         topLevelObjects = [anExternalNameTable objectForKey:CPCibTopLevelObjects];
+        
+    var menu;
+    if ((menu = [objectData mainMenu]) != nil)
+    {
+         [CPApp setMainMenu:menu];
+         [CPMenu setMenuBarVisible:YES];
+    }
+    
+    if (topLevelObjects)
+        [topLevelObjects addObjectsFromArray:[objectData topLevelObjects]];
+    
     /*
 //    [objectData establishConnectionsWithOwner:owner topLevelObjects:topLevelObjects];
 //    [objectData cibInstantiateWithOwner:owner topLevelObjects:topLevelObjects];

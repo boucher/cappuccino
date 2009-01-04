@@ -23,6 +23,15 @@
 @import <AppKit/_CPCibWindowTemplate.j>
 
 
+var NSBorderlessWindowMask          = 0x00,
+    NSTitledWindowMask              = 0x01,
+    NSClosableWindowMask            = 0x02,
+    NSMiniaturizableWindowMask      = 0x04,
+    NSResizableWindowMask           = 0x08,
+    NSUtilityWindowMask             = 0x10,
+    NSTexturedBackgroundWindowMask  = 0x100,
+    NSHUDBackgroundWindowMask       = 0x2000;
+
 @implementation _CPCibWindowTemplate (NSCoding)
 
 - (id)NS_initWithCoder:(CPCoder)aCoder
@@ -37,7 +46,7 @@
             _maxSize = [aCoder decodeSizeForKey:@"NSMaxSize"];
         
         _screenRect = [aCoder decodeRectForKey:@"NSScreenRect"]; // screen created on
-        _viewClass = [aCoder decodeObjectForKey:@"NSViewClass"];
+        _viewClass = [aCoder decodeObjectForKey:@"NSViewClass"]; // references the toolbar if present (anything else?)
         _wtFlags = [aCoder decodeIntForKey:@"NSWTFlags"];
         _windowBacking = [aCoder decodeIntForKey:@"NSWindowBacking"];
         
@@ -51,6 +60,16 @@
         
         // Flip Y coordinate
         _windowRect.origin.y = _screenRect.size.height - _windowRect.origin.y - _windowRect.size.height;
+        
+        if (_windowStyleMask === NSBorderlessWindowMask)
+            _windowStyleMask = CPBorderlessWindowMask;
+        
+        else
+            _windowStyleMask =  (_windowStyleMask & NSTitledWindowMask ? CPTitledWindowMask : 0) | 
+                                (_windowStyleMask & NSMiniaturizableWindowMask ? CPMiniaturizableWindowMask : 0) |
+                                (_windowStyleMask & NSResizableWindowMask ? CPResizableWindowMask : 0) |
+                                (_windowStyleMask & NSTexturedBackgroundWindowMask ? NSTexturedBackgroundWindowMask : 0) |
+                                (_windowStyleMask & NSHUDBackgroundWindowMask ? CPHUDBackgroundWindowMask : 0);
         
         /*if (![_windowClass isEqualToString:@"NSPanel"])
            _windowRect.origin.y -= [NSMainMenuView menuHeight];   // compensation for the additional menu bar

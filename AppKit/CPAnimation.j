@@ -68,7 +68,7 @@ ACTUAL_FRAME_RATE = 0;
     @param animation the animation that was stopped
 
     @delegate - (float)animation:(CPAnimation)animation valueForProgress:(float)progress;
-    The value from this method will be returned when <objj>CPAnimation</objj>'s
+    The value from this method will be returned when CPAnimation's
     <code>currentValue</code> method is called.
     @param animation the animation to obtain the curve value for
     @param progress the current animation progress
@@ -76,7 +76,7 @@ ACTUAL_FRAME_RATE = 0;
 */
 @implementation CPAnimation : CPObject
 {
-    CPTimeInterval          _startTime;
+    CPTimeInterval          _lastTime;
     CPTimeInterval          _duration;
     
     CPAnimationCurve        _animationCurve;
@@ -101,6 +101,7 @@ ACTUAL_FRAME_RATE = 0;
     
     if (self)
     {
+        _progress = 0.0;
         _duration = MAX(0.0, aDuration);
         _animationCurve = anAnimationCurve;
         _frameRate = 60.0;
@@ -116,10 +117,6 @@ ACTUAL_FRAME_RATE = 0;
 */
 - (void)setAnimationCurve:(CPAnimationCurve)anAnimationCurve
 {
-    _animationCurve = anAnimationCurve;
-    
-    var timingFunctionName = kCAMediaTimingFunctionLinear;
-    
     switch (_animationCurve)
     {
         case CPAnimationEaseInOut:  timingFunctionName = kCAMediaTimingFunctionEaseInEaseOut;
@@ -130,12 +127,16 @@ ACTUAL_FRAME_RATE = 0;
                                     
         case CPAnimationEaseOut:    timingFunctionName = kCAMediaTimingFunctionEaseOut;
                                     break;
+                                    
+        case CPAnimationLinear:     timingFunctionName = kCAMediaTimingFunctionLinear;
+                                    break;
 
         default:                    [CPException raise:CPInvalidArgumentException
                                                 reason:"Invalid value provided for animation curve"];
                                     break;
     }
     
+    _animationCurve = anAnimationCurve;
     _timingFunction = [CAMediaTimingFunction functionWithName:timingFunctionName];
 }
 
@@ -217,9 +218,11 @@ ACTUAL_FRAME_RATE = 0;
     if (_timer || _delegate && [_delegate respondsToSelector:@selector(animationShouldStart)] && ![_delegate animationShouldStart:self])
         return;
     
-    _progress = 0.0;
+    if (_progress === 1.0)
+        _progress = 0.0;
+    
     ACTUAL_FRAME_RATE = 0;
-    _startTime = new Date();
+    _lastTime = new Date();
     
     _timer = [CPTimer scheduledTimerWithTimeInterval:0.0 target:self selector:@selector(animationTimerDidFire:) userInfo:nil repeats:YES];
 }
@@ -229,8 +232,10 @@ ACTUAL_FRAME_RATE = 0;
 */
 - (void)animationTimerDidFire:(CPTimer)aTimer
 {
-    var elapsed = new Date() - _startTime,
-        progress = MIN(1.0, 1.0 - (_duration - elapsed / 1000.0) / _duration);
+    var currentTime = new Date(),
+        progress = MIN(1.0, [self currentProgress] + (currentTime - _lastTime) / (_duration * 1000.0));
+
+    _lastTime = currentTime;
 
     ++ACTUAL_FRAME_RATE;
     
@@ -244,7 +249,6 @@ ACTUAL_FRAME_RATE = 0;
         if ([_delegate respondsToSelector:@selector(animationDidEnd:)])
             [_delegate animationDidEnd:self];
     }
-    
 }
 
 /*!

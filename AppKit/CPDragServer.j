@@ -116,7 +116,7 @@ var CPDragServerUpdateDragging = function(anEvent)
 }
 
 /*
-    <objj>CPDraggingInfo</objj> is a container of information about a specific dragging session.
+    CPDraggingInfo is a container of information about a specific dragging session.
     @ignore
 */
 @implementation CPDraggingInfo : CPObject
@@ -150,6 +150,26 @@ var CPDragServerUpdateDragging = function(anEvent)
 - (CPPasteboard)draggingPasteboard
 {
     return CPDragServerPasteboard;
+}
+
+- (CPImage)draggedImage
+{
+    return [CPDragServerView image];
+}
+
+- (CGPoint)draggedImageLocation
+{
+    return [self draggedViewLocation];
+}
+
+- (CGPoint)draggedViewLocation
+{
+    return [[CPDragServerDestination window] convertBridgeToBase:[CPDragServerView frame].origin];
+}
+
+- (CPView)draggedView
+{
+    return CPDragServerView;
 }
 
 @end

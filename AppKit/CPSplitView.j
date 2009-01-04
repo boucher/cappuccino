@@ -190,9 +190,11 @@ var CPSplitViewHorizontalImage = nil,
 {
     var count = [_subviews count] - 1;
     
-    if (count > 0)
-        while (count--)
-            [self drawDividerInRect:[self rectOfDividerAtIndex:count]];
+    while ((count--) > 0)
+    {
+        _drawingDivider = count;
+        [self drawDividerInRect:[self rectOfDividerAtIndex:count]];
+    }
 }
 
 - (void)drawDividerInRect:(CGRect)aRect
@@ -367,6 +369,7 @@ var CPSplitViewHorizontalImage = nil,
 
 - (void)mouseDown:(CPEvent)anEvent
 {
+    // FIXME: This should not trap events if not on a divider!
     [self trackDivider:anEvent];
 }
 
@@ -515,7 +518,7 @@ var CPSplitViewDelegateKey          = "CPSplitViewDelegateKey",
 
 /*
     Initializes the split view by unarchiving data from <code>aCoder</code>.
-    @param aCoder the coder containing the archived <objj>CPSplitView</objj>.
+    @param aCoder the coder containing the archived CPSplitView.
 */
 - (id)initWithCoder:(CPCoder)aCoder
 {

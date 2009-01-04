@@ -382,30 +382,72 @@ function mainCreate()
 {   
     if (arguments.length < 1)
         printUsage("create");
-    
-    var dst = arguments[0],
-        link = arguments[1] == "-l";
+        
+    var link = false,
+        index = 0,
+        count = arguments.length;
 
-    var srcNewApp       = new File(OBJJ_HOME+"/lib/NewApplication"),
-        srcFrameworks   = new File(OBJJ_HOME+"/lib/Frameworks"),
-        dstNewApp       = new File(dst),
-        dstFrameworks   = new File(dst+"/Frameworks");
-    
-    System.out.println(srcNewApp.getCanonicalPath() + "," + dstNewApp.getCanonicalPath() + "," + srcFrameworks.getCanonicalPath() + "," + dstFrameworks.getCanonicalPath());
-    
-    if (!dstNewApp.exists())
+    for (; index < count; ++index)
     {
-        exec(["cp", "-vR", srcNewApp.getCanonicalPath(), dstNewApp.getCanonicalPath()], true);
+        var argument = arguments[index];
+        
+        switch (arguments[index])
+        {
+            case "-l":  link = true;
+                        break;
+            default:    destination = argument;
+        }
+    }
+
+    var sourceNewApplication = new File(OBJJ_HOME + "/lib/NewApplication"),
+        destinationNewApplication = new File(destination),
+        sourceFrameworks = new File(OBJJ_HOME + "/lib/Frameworks"),
+        sourceDebugFrameworks = new File(OBJJ_HOME + "/lib/Frameworks-Debug"),
+        destinationFrameworks = new File(destination + "/Frameworks"),
+        destinationDebugFrameworks = new File(destination + "/Frameworks/Debug");
+    
+    System.out.println(sourceNewApplication.getCanonicalPath() + "," + destinationNewApplication.getCanonicalPath() + "," + sourceFrameworks.getCanonicalPath() + "," + destinationFrameworks.getCanonicalPath());
+    
+    if (!destinationNewApplication.exists())
+    {
+        exec(["cp", "-vR", sourceNewApplication.getCanonicalPath(), destinationNewApplication.getCanonicalPath()], true);
         
         if (!link)
-            exec(["cp", "-vR", srcFrameworks.getCanonicalPath(), dstFrameworks.getCanonicalPath()], true);            
+        {
+            exec(["cp", "-vR", sourceFrameworks.getCanonicalPath(), destinationFrameworks.getCanonicalPath()], true);
+            exec(["cp", "-vR", sourceDebugFrameworks.getCanonicalPath(), destinationDebugFrameworks.getCanonicalPath()], true);
+        }
         else
-            exec(["ln", "-s", new File(System.getenv("STEAM_BUILD")+"/Release").getCanonicalPath(), dstFrameworks.getCanonicalPath()], true);    
+        {
+            var STEAM_BUILD = System.getenv("STEAM_BUILD");
+            
+            // Release Frameworks
+            new File(destinationFrameworks).mkdir();
+            
+            exec(["ln", "-s",   new File(STEAM_BUILD + "/Release/Objective-J").getCanonicalPath(),
+                                new File(destination + "/Frameworks/Objective-J").getCanonicalPath()], true);
+
+            exec(["ln", "-s",   new File(STEAM_BUILD + "/Release/Foundation").getCanonicalPath(),
+                                new File(destination + "/Frameworks/Foundation").getCanonicalPath()], true);
+
+            exec(["ln", "-s",   new File(STEAM_BUILD + "/Release/AppKit").getCanonicalPath(),
+                                new File(destination + "/Frameworks/AppKit").getCanonicalPath()], true);
+
+            // Debug Frameworks
+            new File(destinationDebugFrameworks).mkdir();
+            
+            exec(["ln", "-s",   new File(STEAM_BUILD + "/Debug/Objective-J").getCanonicalPath(),
+                                new File(destination + "/Frameworks/Debug/Objective-J").getCanonicalPath()], true);
+
+            exec(["ln", "-s",   new File(STEAM_BUILD + "/Debug/Foundation").getCanonicalPath(),
+                                new File(destination + "/Frameworks/Debug/Foundation").getCanonicalPath()], true);
+
+            exec(["ln", "-s",   new File(STEAM_BUILD + "/Debug/AppKit").getCanonicalPath(),
+                                new File(destination + "/Frameworks/Debug/AppKit").getCanonicalPath()], true);
+        }
     }
     else
-    {
         System.out.println("Directory already exists");
-    }
 }
 
 function mainBuild()

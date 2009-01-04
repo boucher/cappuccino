@@ -9,6 +9,7 @@
     <filelist id = "Files.Objective-J" dir = ".">
     
         <file name = "constants.js" />
+        <file name = "utilities.js" />
         <file name = "runtime.js" />
         <file name = "dictionary.js" />
         <file name = "plist.js" />
@@ -18,6 +19,7 @@
         <file name = "evaluate.js" />
         <file name = "static.js" />
         <file name = "debug.js" />
+        <file name = "bootstrap.js" />
     
     </filelist>
     

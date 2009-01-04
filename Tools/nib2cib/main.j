@@ -20,6 +20,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+
 @import <Foundation/Foundation.j>
 
 @import <AppKit/CPCib.j>
@@ -27,8 +28,7 @@
 @import "NSFoundation.j"
 @import "NSAppKit.j"
 
-importClass(java.io.FileWriter);
-importClass(java.io.BufferedWriter);
+importPackage(java.io);
 
 CPLogRegister(CPLogPrint);
 
@@ -48,57 +48,186 @@ function exec(command)
 	return result;
 }
 
-// Make sure we can read the file
-if (!(new Packages.java.io.File(args[0])).canRead())
+function printUsage()
 {
-    print("Could not read file at " + args[0]);
-    return;
+    java.lang.System.out.println("usage: steam INPUT_FILE [OUTPUT_FILE]");    
+    java.lang.System.exit(1);
 }
 
-// Compile xib or nib to make sure we have a non-new format nib.
-var temporaryNibFile = Packages.java.io.File.createTempFile("temp", ".nib"),
-    temporaryNibFilePath = temporaryNibFile.getAbsolutePath();
-
-temporaryNibFile.deleteOnExit();
-
-if (exec(["/usr/bin/ibtool", args[0], "--compile", temporaryNibFilePath]))
+function cibExtension(aPath)
 {
-    print("Could not compile file at " + args[0]);
-    return;
-}
-
-// Convert from binary plist to XML plist
-var temporaryPlistFile = Packages.java.io.File.createTempFile("temp", ".plist"),
-    temporaryPlistFilePath = temporaryPlistFile.getAbsolutePath();
-
-temporaryPlistFile.deleteOnExit();
-
-if (exec(["/usr/bin/plutil", "-convert", "xml1", temporaryNibFilePath, "-o", temporaryPlistFilePath]))
-{
-    print("Could not convert to xml plist for file at " + args[0]);
-    return;
-}
-
-var data = [CPURLConnection sendSynchronousRequest:[CPURLRequest requestWithURL:temporaryPlistFilePath] returningResponse:nil error:nil];
-
-// Minor NSKeyedArchive to CPKeyedArchive conversion.
-[data setString:[data string].replace(/\<key\>\s*CF\$UID\s*\<\/key\>/g, "<key>CP$UID</key>")];
-
-// Unarchive the NS data
-var unarchiver = [[CPKeyedUnarchiver alloc] initForReadingWithData:data],
-    objectData = [unarchiver decodeObjectForKey:@"IB.objectdata"],
+    var start = aPath.length - 1;
     
-    data = [CPData data],
-    archiver = [[CPKeyedArchiver alloc] initForWritingWithMutableData:data];
+    while (aPath.charAt(start) === '/')
+        start--;
 
-// Re-archive the CP data.
-[archiver encodeObject:objectData forKey:@"CPCibObjectDataKey"];
-[archiver finishEncoding];
+    aPath = aPath.substr(0, start + 1);
 
-var writer = new BufferedWriter(new FileWriter("MainMenu.cib"));//outputPath + name.substring(0, args[0].indexOf(".")) + ".o"));
+    var dotIndex = aPath.lastIndexOf('.');
+    
+    if (dotIndex == -1)
+        return aPath + ".cib";
+    
+    var slashIndex = aPath.lastIndexOf('/');
+    
+    if (slashIndex > dotIndex)
+        return aPath + ".cib";
+    
+    return aPath.substr(0, dotIndex) + ".cib";
+}
 
-writer.write([data string]);
+function convert(inputFileName, outputFileName)
+{
+    // Make sure we can read the file
+    if (!(new Packages.java.io.File(inputFileName)).canRead())
+    {
+        print("Could not read file at " + inputFileName);
+        return;
+    }
 
-writer.close();
+    // Compile xib or nib to make sure we have a non-new format nib.
+    var temporaryNibFile = Packages.java.io.File.createTempFile("temp", ".nib"),
+        temporaryNibFilePath = temporaryNibFile.getAbsolutePath();
+    
+    temporaryNibFile.deleteOnExit();
+    
+    if (exec(["/usr/bin/ibtool", inputFileName, "--compile", temporaryNibFilePath]))
+    {
+        print("Could not compile file at " + inputFileName);
+        return;
+    }
 
+    // Convert from binary plist to XML plist
+    var temporaryPlistFile = Packages.java.io.File.createTempFile("temp", ".plist"),
+        temporaryPlistFilePath = temporaryPlistFile.getAbsolutePath();
+    
+    temporaryPlistFile.deleteOnExit();
+    
+    if (exec(["/usr/bin/plutil", "-convert", "xml1", temporaryNibFilePath, "-o", temporaryPlistFilePath]))
+    {
+        print("Could not convert to xml plist for file at " + inputFileName);
+        return;
+    }
 
+    var data = [CPURLConnection sendSynchronousRequest:[CPURLRequest requestWithURL:temporaryPlistFilePath] returningResponse:nil error:nil];
+    
+    // Minor NSKeyedArchive to CPKeyedArchive conversion.
+    [data setString:[data string].replace(/\<key\>\s*CF\$UID\s*\<\/key\>/g, "<key>CP$UID</key>")];
+    
+    // Unarchive the NS data
+    var unarchiver = [[CPKeyedUnarchiver alloc] initForReadingWithData:data],
+        objectData = [unarchiver decodeObjectForKey:@"IB.objectdata"],
+        
+        data = [CPData data],
+        archiver = [[CPKeyedArchiver alloc] initForWritingWithMutableData:data];
+
+    // Re-archive the CP data.
+    [archiver encodeObject:objectData forKey:@"CPCibObjectDataKey"];
+    [archiver finishEncoding];
+    
+    var writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFileName), "UTF-8"));
+    
+    writer.write([data string]);
+    
+    writer.close();
+}
+
+function readPlist(/*File*/ aFile)
+{
+    var reader = new BufferedReader(new FileReader(aFile)),
+        fileContents = "";
+    
+    // Get contents of the file
+    while (reader.ready())
+        fileContents += reader.readLine() + '\n';
+        
+    reader.close();
+
+    var data = new objj_data();
+    data.string = fileContents;
+
+    return new CPPropertyListCreateFromData(data);
+}
+
+function importFiles(filePaths, aCallback)
+{
+    if (filePaths.length === 0)
+        aCallback();
+    else
+        objj_import(new File(filePaths.shift()).getCanonicalPath(), YES, function() { importFiles(filePaths, aCallback) });
+}
+
+function loadFrameworks(frameworkPaths, aCallback)
+{
+    if (frameworkPaths.length === 0)
+        return aCallback();
+    
+    var frameworkPath = frameworkPaths.shift(),
+        
+        infoPlist = new File(frameworkPath + "/Info.plist");
+        
+    if (!infoPlist.exists())
+    {
+        java.lang.System.out.println("'" + frameworkPath + "' is not a framework or could not be found.");
+        java.lang.System.exit(1);
+    }
+    
+    var infoDictionary = readPlist(new File(frameworkPath + "/Info.plist"));
+    
+    if ([infoDictionary objectForKey:@"CPBundlePackageType"] !== "FMWK")
+    {
+        java.lang.System.out.println("'" + frameworkPath + "' is not a framework .");
+        java.lang.System.exit(1);
+    }
+    
+    var files = [infoDictionary objectForKey:@"CPBundleReplacedFiles"],
+        index = 0,
+        count = files.length;
+        
+    for (; index < count; ++index)
+        files[index] = frameworkPath + '/' + files[index];
+    
+    importFiles(files, function() { loadFrameworks(frameworkPaths, aCallback) });
+}
+
+function main()
+{
+    var count = arguments.length;
+    
+    if (count < 1)
+        printUsage();
+    
+    var index = 0,
+    
+        inputFileName = nil,
+        outputFileName = nil,
+        frameworkPaths = [];
+    
+    for (; index < count; ++index)
+    {
+        switch(arguments[index])
+        {
+            case "-help":
+            case "--help":  printUsage();
+            
+            case "-F":      frameworkPaths.push(arguments[++index]);
+                            break;
+            
+            default:        if (inputFileName && inputFileName.length > 0)
+                                outputFileName = arguments[index];
+                            else
+                                inputFileName = arguments[index];
+        }
+    }
+
+    if (!outputFileName || outputFileName.length < 1)
+        outputFileName = cibExtension(inputFileName);
+
+    if (frameworkPaths.length)
+        loadFrameworks(frameworkPaths, function() { convert(inputFileName, outputFileName); });
+    
+    else
+        convert(inputFileName, outputFileName);
+}
+
+main.apply(main, args);

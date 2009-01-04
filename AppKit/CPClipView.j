@@ -27,8 +27,8 @@
 
 /*! @class CPClipView
 
-    <objj>CPClipView</objj> allows you to define a clip rect and display only that portion of its containing view.  
-    It is used to hold the document view in a <objj>CPScrollView</objj>.
+    CPClipView allows you to define a clip rect and display only that portion of its containing view.  
+    It is used to hold the document view in a CPScrollView.
 */
 @implementation CPClipView : CPView
 {
@@ -134,7 +134,7 @@
 }
 
 /*!
-    Handles a <objj>CPViewBoundsDidChangeNotification</objj>.
+    Handles a CPViewBoundsDidChangeNotification.
     @param aNotification the notification event
 */
 - (void)viewBoundsChanged:(CPNotification)aNotification
@@ -143,7 +143,7 @@
 }
 
 /*!
-    Handles a <objj>CPViewFrameDidChangeNotification</objj>.
+    Handles a CPViewFrameDidChangeNotification.
     @param aNotification the notification event
 */
 - (void)viewFrameChanged:(CPNotification)aNotification
@@ -164,6 +164,50 @@
         
     if ([superview isKindOfClass:[CPScrollView class]])
         [superview reflectScrolledClipView:self];
+}
+
+@end
+
+
+var CPClipViewDocumentViewKey = @"CPScrollViewDocumentView";
+
+@implementation CPClipView (CPCoding)
+
+- (id)initWithCoder:(CPCoder)aCoder
+{
+    if (self = [super initWithCoder:aCoder])
+    {
+        _documentView = [aCoder decodeObjectForKey:CPClipViewDocumentViewKey];
+        
+        if (_documentView)
+        {
+    		[_documentView setPostsFrameChangedNotifications:YES];
+    		[_documentView setPostsBoundsChangedNotifications:YES];
+
+            var defaultCenter = [CPNotificationCenter defaultCenter];
+            
+    		[defaultCenter
+                addObserver:self
+                   selector:@selector(viewFrameChanged:)
+                       name:CPViewFrameDidChangeNotification 
+                     object:_documentView];
+
+    		[defaultCenter
+                addObserver:self
+                   selector:@selector(viewBoundsChanged:)
+                       name:CPViewBoundsDidChangeNotification 
+                     object:_documentView];
+        }
+    }
+    
+    return self;
+}
+
+- (void)encodeWithCoder:(CPCoder)aCoder
+{
+    [super encodeWithCoder:aCoder];
+    
+    [aCoder encodeObject:_documentView forKey:CPClipViewDocumentViewKey];
 }
 
 @end

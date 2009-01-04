@@ -79,19 +79,52 @@
     <target name = "test" depends = "build">
         <ojtest>
             <tests>
+                <fileset dir = "Tests/Objective-J" includes = "*.j"/>
                 <fileset dir = "Tests/Foundation" includes = "*.j"/>
                 <!--<fileset dir = "Tests/AppKit" includes = "*.j"/>-->
             </tests>
         </ojtest>
     </target>
     
-    <target name = "docs">
+    <target name = "safe-documentation" >
+    
+        <exec executable = "which" outputproperty = "doxygen.location">
+            <arg line = "doxygen" />
+        </exec>
+
+        <condition property = "doxygen.target" value = "" else = "-warning">
+            <not>
+                <length string = "${doxygen.location}" length = "0" />
+            </not>
+        </condition>
+
+        <antcall target = "documentation${doxygen.target}" />
+    
+    </target>
+
+    <target name = "documentation-warning">
+        <echo>*** WARNING: Doxygen not installed.  Could not create documentation.</echo>
+    </target>
+    
+    <target name = "documentation">
+    
         <exec executable = "doxygen" dir = ".">
             <arg value = "Tools/Documentation/Cappuccino.doxygen" />
         </exec>
 
-        <mkdir dir = "${Build}" />
-        <move file = "Documentation" todir = "${Build}" />
+        <mkdir dir = "${Build.Cappuccino}" />
+        <move file = "Documentation" todir = "${Build.Cappuccino}" />
+
+        <mkdir dir = "${Build.Cappuccino.Starter}" />
+        <copy todir = "${Build.Cappuccino.Starter}/Documentation" >
+            <fileset dir = "${Build.Cappuccino}/Documentation/html" />
+        </copy>
+
+        <mkdir dir = "${Build.Cappuccino.Tools}" />
+        <copy todir = "${Build.Cappuccino.Tools}/Documentation" >
+            <fileset dir = "${Build.Cappuccino}/Documentation/html" />
+        </copy>
+        
     </target>
 
     <!-- Deploying -->
@@ -194,22 +227,6 @@
             <fileset dir = "Tools/NewApplication" />
         </copy>
         
-        <copy todir = "${Build.Cappuccino.Tools.Lib}/NewApplication/Frameworks">
-            <fileset dir = "${Build}/Release/">
-                <include name = "Objective-J/" />
-                <include name = "Foundation/" />
-                <include name = "AppKit/" />
-            </fileset>
-        </copy>
-
-        <copy todir = "${Build.Cappuccino.Tools.Lib}/NewApplication/Frameworks-Debug">
-            <fileset dir = "${Build}/Debug/">
-                <include name = "Objective-J/" />
-                <include name = "Foundation/" />
-                <include name = "AppKit/" />
-            </fileset>
-        </copy>
-        
         <!-- FIXME: This is awful, we need to handle this like we handle Demos -->
         
         <git-clone-pull repository = "git://github.com/280north/ojunit.git" dest = "${Build}/Release/ojunit" />
@@ -225,17 +242,21 @@
         <copy todir = "${Build.Cappuccino.Tools.Bin}">
             <fileset dir = "${Build}/Release/bake/bin" />
             <fileset dir = "${Build}/Release/cplutil/bin" />
-            <fileset dir = "${Build}/Release/nib2cib/bin" />
             <fileset dir = "${Build}/Release/objj/bin" />
             <fileset dir = "${Build}/Release/objjc/bin" />
             <fileset dir = "${Build}/Release/press/bin" />
             <fileset dir = "${Build}/Release/steam/bin" />
         </copy>
+        
+        <copy file = "Tools/nib2cib/nib2cib" todir = "${Build.Cappuccino.Tools.Bin}" />
+
+        <copy todir = "${Build.Cappuccino.Tools.Lib}/nib2cib">
+            <fileset dir = "${Build}/Release/nib2cib" />
+        </copy>
 
         <copy todir = "${Build.Cappuccino.Tools.Lib}">
             <fileset dir = "${Build}/Release/bake/lib" />
             <fileset dir = "${Build}/Release/cplutil/lib" />
-            <fileset dir = "${Build}/Release/nib2cib/lib" />
             <fileset dir = "${Build}/Release/objj/lib" />
             <fileset dir = "${Build}/Release/objjc/lib" />
             <fileset dir = "${Build}/Release/press/lib" />
@@ -267,8 +288,28 @@
         <!-- Starter Package -->
 
         <copy todir = "${Build.Cappuccino.Starter}/NewApplication">
-            <fileset dir = "${Build.Cappuccino.Tools.Lib}/NewApplication/" />
+            <fileset dir = "Tools/NewApplication/" />
         </copy>
+        
+        <copy todir = "${Build.Cappuccino.Starter}/NewApplication/Frameworks">
+            <fileset dir = "${Build}/Release/">
+                <include name = "Objective-J/" />
+                <include name = "Foundation/" />
+                <include name = "AppKit/" />
+            </fileset>
+        </copy>
+
+        <copy todir = "${Build.Cappuccino.Starter}/NewApplication/Frameworks/Debug">
+            <fileset dir = "${Build}/Debug/">
+                <include name = "Objective-J/" />
+                <include name = "Foundation/" />
+                <include name = "AppKit/" />
+            </fileset>
+        </copy>
+        
+        <!-- Documentation -->
+        
+        <antcall target = "safe-documentation" />
         
         <!-- Zip -->
         

@@ -22,6 +22,7 @@
 
 @import "NSButton.j"
 @import "NSCell.j"
+@import "NSClipView.j"
 @import "NSColor.j"
 @import "NSColorWell.j"
 @import "NSControl.j"
@@ -29,23 +30,37 @@
 @import "NSCustomView.j"
 @import "NSFont.j"
 @import "NSIBObjectData.j"
+@import "NSMenu.j"
+@import "NSMenuItem.j"
 @import "NSNibConnector.j"
+@import "NSPopUpButton.j"
 @import "NSResponder.j"
+@import "NSScrollView.j"
+@import "NSScroller.j"
+@import "NSSegmentedControl.j"
 @import "NSSlider.j"
 @import "NSSplitView.j"
+@import "NSTabView.j"
+@import "NSTabViewItem.j"
 @import "NSTextField.j"
 @import "NSToolbar.j"
 @import "NSView.j"
 @import "NSWindowTemplate.j"
 @import "WebView.j"
 
+
 function CP_NSMapClassName(aClassName)
 {
-    if (aClassName == @"NSView")
-        return "CPView";
+    switch (aClassName)
+    {
+        case @"NSApplication":  return @"CPApplication";
+        case @"NSObject":       return @"CPObject";
+        case @"NSPanel":        return @"CPPanel";
+        case @"NSView":         return @"CPView";
+        case @"NSWindow":       return @"CPWindow";
+        
+        default:                CPLog.warn("No class name mapping for \"" + aClassName + "\"");
+    }
 
-    if (aClassName == @"NSWindow")
-        return @"CPWindow";
-    
     return aClassName;
 }
