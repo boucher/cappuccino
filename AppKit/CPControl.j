@@ -23,6 +23,7 @@
 @import "CPFont.j"
 @import "CPShadow.j"
 @import "CPView.j"
+@import "CPKeyValueBinding.j"
 
 #include "Platform/Platform.h"
 
@@ -106,6 +107,19 @@ var CPControlBlackColor     = [CPColor blackColor];
     BOOL        _trackingWasWithinFrame;
     unsigned    _trackingMouseDownFlags;
     CGPoint     _previousTrackingLocation;
+}
+
++ (void)initialize
+{
+    [self exposeBinding:"value"];
+}
+
++ (BOOL)automaticallyNotifiesObserversForKey:(CPString)aKey
+{
+    if (aKey === @"value")
+        return NO;
+
+    return YES;
 }
 
 - (id)initWithFrame:(CGRect)aFrame
@@ -393,7 +407,9 @@ var CPControlBlackColor     = [CPColor blackColor];
 */
 - (void)setObjectValue:(id)anObject
 {
+    [self willChangeValueForKey:@"value"];
     _value = anObject;
+    [self didChangeValueForKey:@"value"];
 }
 
 /*!
