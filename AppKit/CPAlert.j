@@ -84,7 +84,9 @@ var CPAlertWarningImage,
     CPImageView     _alertImageView;
 
     CPAlertStyle    _alertStyle;
+    int             _windowStyle;
     int             _buttonCount;
+    CPArray         _buttons;
 
     id              _delegate;
 }
@@ -97,13 +99,13 @@ var CPAlertWarningImage,
     var bundle = [CPBundle bundleForClass:[self class]];   
 
     CPAlertWarningImage     = [[CPImage alloc] initWithContentsOfFile:[bundle pathForResource:@"CPAlert/dialog-warning.png"] 
-                                                                 size:CGSizeMake(32,32)];
+                                                                 size:CGSizeMake(32.0, 32.0)];
                                                              
     CPAlertInformationImage = [[CPImage alloc] initWithContentsOfFile:[bundle pathForResource:@"CPAlert/dialog-information.png"] 
-                                                                 size:CGSizeMake(32,32)];
+                                                                 size:CGSizeMake(32.0, 32.0)];
                                                                  
     CPAlertErrorImage       = [[CPImage alloc] initWithContentsOfFile:[bundle pathForResource:@"CPAlert/dialog-error.png"] 
-                                                                 size:CGSizeMake(32,32)];
+                                                                 size:CGSizeMake(32.0, 32.0)];
 }
 
 /*!
@@ -116,25 +118,57 @@ var CPAlertWarningImage,
     if (self)
     {
         _buttonCount = 0;
+        _buttons = [CPArray array];
         _alertStyle = CPWarningAlertStyle;
         
-        _alertPanel = [[CPPanel alloc] initWithContentRect:CGRectMake(0, 0, 300, 150) styleMask:CPHUDBackgroundWindowMask|CPTitledWindowMask];
-        [_alertPanel setFloatingPanel:YES];
-        [_alertPanel center];
-        
-        _messageLabel = [[CPTextField alloc] initWithFrame: CGRectMake(70,10, 200, 100)];
-        [_messageLabel setFont: [CPFont fontWithName: "Helvetica Neue" size: 12.0]];
-        [_messageLabel setTextColor: [CPColor whiteColor]];
+        _messageLabel = [[CPTextField alloc] initWithFrame:CGRectMake(57.0, 10.0, 220.0, 80.0)];
+        [_messageLabel setFont:[CPFont systemFontOfSize:12.0]];
         [_messageLabel setLineBreakMode:CPLineBreakByWordWrapping];
-    
-        [[_alertPanel contentView] addSubview: _messageLabel];
-
-        _alertImageView = [[CPImageView alloc] initWithFrame:CGRectMake(25,12,32,32)];
+        [_messageLabel setAlignment:CPJustifiedTextAlignment];
         
-        [[_alertPanel contentView] addSubview: _alertImageView];
+        _alertImageView = [[CPImageView alloc] initWithFrame:CGRectMake(15.0, 12.0, 32.0, 32.0)];
+        
+        [self setWindowStyle:nil];
     }
     
     return self;
+}
+
+/*!
+    Sets the window appearance.
+    @param styleMask - Either CPHUDBackgroundWindowMask or nil for standard.
+*/
+- (void)setWindowStyle:(int)styleMask
+{
+    _windowStyle = styleMask;
+    
+    _alertPanel = [[CPPanel alloc] initWithContentRect:CGRectMake(0.0, 0.0, 300.0, 130.0) styleMask:styleMask ? styleMask | CPTitledWindowMask : CPTitledWindowMask];
+    [_alertPanel setFloatingPanel:YES];
+    [_alertPanel center];
+    
+    [_messageLabel setTextColor:(styleMask == CPHUDBackgroundWindowMask) ? [CPColor whiteColor] : [CPColor blackColor]];
+    
+    var count = [_buttons count];
+    for(var i=0; i < count; i++)
+    {
+        var button = _buttons[i];
+        
+        [button setFrameSize:CGSizeMake([button frame].size.width, (styleMask == CPHUDBackgroundWindowMask) ? 20.0 : 18.0)];
+        [button setBezelStyle:(styleMask == CPHUDBackgroundWindowMask) ? CPHUDBezelStyle : CPRoundedBezelStyle];
+        
+        [[_alertPanel contentView] addSubview:button];
+    }
+    
+    [[_alertPanel contentView] addSubview:_messageLabel];
+    [[_alertPanel contentView] addSubview:_alertImageView];
+}
+
+/*!
+    Gets the window's style.
+*/
+- (int)windowStyle
+{
+    return _windowStyle;
 }
 
 /*!
@@ -197,17 +231,18 @@ var CPAlertWarningImage,
 */
 - (void)addButtonWithTitle:(CPString)title
 {
-    var button = [[CPButton alloc] initWithFrame:CGRectMake(190 - (_buttonCount * 90),80,80,18)];
+    var button = [[CPButton alloc] initWithFrame:CGRectMake(200.0 - (_buttonCount * 90.0), 98.0, 80.0, (_windowStyle == CPHUDBackgroundWindowMask) ? 20.0 : 18.0)];
     
     [button setTitle:title];
     [button setTarget:self];
     [button setTag:_buttonCount];
-    [button setBezelStyle:CPHUDBezelStyle];
     [button setAction:@selector(_notifyDelegate:)];
     
+    [button setBezelStyle:(_windowStyle == CPHUDBackgroundWindowMask) ? CPHUDBezelStyle : CPRoundRectBezelStyle];
     [[_alertPanel contentView] addSubview:button];
     
     _buttonCount++;
+    [_buttons addObject:button];
 }
 
 /*!
@@ -219,12 +254,15 @@ var CPAlertWarningImage,
 {
     switch (_alertStyle)
     {
-        case CPWarningAlertStyle:          [_alertImageView setImage:CPAlertWarningImage];
-                                           break;
-        case CPInformationalAlertStyle:    [_alertImageView setImage:CPAlertInformationImage];
-                                           break;
-        case CPCriticalAlertStyle:         [_alertImageView setImage:CPAlertErrorImage];    
-                                           break;
+        case CPWarningAlertStyle:       [_alertImageView setImage:CPAlertWarningImage];
+                                        [_alertPanel setTitle:@"Warning"];
+                                        break;
+        case CPInformationalAlertStyle: [_alertImageView setImage:CPAlertInformationImage];
+                                        [_alertPanel setTitle:@"Information"];
+                                        break;
+        case CPCriticalAlertStyle:      [_alertImageView setImage:CPAlertErrorImage];
+                                        [_alertPanel setTitle:@"Error"];
+                                        break;
     }
         
     [CPApp runModalForWindow:_alertPanel];
