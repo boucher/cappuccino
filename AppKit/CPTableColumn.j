@@ -75,6 +75,11 @@ CPTableColumnUserResizingMask   = 2;
     Object      _purgableInfosForDataView;  // (key=data view hash, value=)
 }
 
+- (id)init
+{
+    return [self initWithIdentifier:nil];
+}
+
 /*!
     Initializes the table column with the specified identifier.
     @param anIdentifier the identifier
@@ -381,6 +386,48 @@ CPTableColumnUserResizingMask;
     //CPLog.warn("nope, time for creation: %s", newView);
     
     return newView;
+}
+
+@end
+
+var CPTableColumnIdentifierKey   = @"CPTableColumnIdentifierKey",
+    CPTableColumnHeaderViewKey   = @"CPTableColumnHeaderViewKey",
+    CPTableColumnDataViewKey     = @"CPTableColumnDataViewKey",
+    CPTableColumnWidthKey        = @"CPTableColumnWidthKey",
+    CPTableColumnMinWidthKey     = @"CPTableColumnMinWidthKey",
+    CPTableColumnMaxWidthKey     = @"CPTableColumnMaxWidthKey",
+    CPTableColumnResizingMaskKey = @"CPTableColumnResizingMaskKey";
+
+@implementation CPTableColumn (CPCoding)
+
+- (id)initWithCoder:(CPCoder)aCoder
+{
+    if (self = [self init])
+    {
+        _identifier = [aCoder decodeObjectForKey:CPTableColumnIdentifierKey];
+        
+        _headerView = [aCoder decodeObjectForKey:CPTableColumnHeaderViewKey];
+        _dataView = [aCoder decodeObjectForKey:CPTableColumnDataViewKey];
+        
+        _width = [aCoder decodeFloatForKey:CPTableColumnWidthKey];
+        _minWidth = [aCoder decodeFloatForKey:CPTableColumnMinWidthKey];
+        _maxWidth = [aCoder decodeFloatForKey:CPTableColumnMaxWidthKey];
+        
+        _resizingMask  = [aCoder decodeBoolForKey:CPTableColumnResizingMaskKey];
+    }
+    
+    return self;
+}
+
+- (void)encodeWithCoder:(CPCoder)aCoder
+{
+    [aCoder encodeObject:_identifier forKey:CPTableColumnIdentifierKey];
+    [aCoder encodeObject:_headerView forKey:CPTableColumnHeaderViewKey];
+    [aCoder encodeObject:_dataView forKey:CPTableColumnDataViewKey];
+    [aCoder encodeObject:_width forKey:CPTableColumnWidthKey];
+    [aCoder encodeObject:_minWidth forKey:CPTableColumnMinWidthKey];
+    [aCoder encodeObject:_maxWidth forKey:CPTableColumnMaxWidthKey];
+    [aCoder encodeObject:_resizingMask forKey:CPTableColumnResizingMaskKey];
 }
 
 @end

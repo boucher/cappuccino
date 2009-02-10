@@ -1146,6 +1146,48 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
 
 @end
 
+var CPTableViewDataSourceKey        = @"CPTableViewDataSourceKey",
+    CPTableViewDelegateKey          = @"CPTableViewDelegateKey",
+    CPTableViewHeaderViewKey        = @"CPTableViewHeaderViewKey",
+    CPTableViewTableColumnsKey      = @"CPTableViewTableColumnsKey",
+    CPTableViewRowHeightKey         = @"CPTableViewRowHeightKey",
+    CPTableViewIntercellSpacingKey  = @"CPTableViewIntercellSpacingKey",
+    CPTableViewMultipleSelectionKey = @"CPTableViewMultipleSelectionKey",
+    CPTableViewEmptySelectionKey    = @"CPTableViewEmptySelectionKey";
+
+@implementation CPTableView (CPCoding)
+
+- (id)initWithCoder:(CPCoder)aCoder
+{
+    if (self = [super initWithCoder:aCoder])
+    {
+        _dataSource = [aCoder decodeObjectForKey:CPTableViewDataSourceKey];
+        _delegate = [aCoder decodeObjectForKey:CPTableViewDelegateKey];
+        _headerView = [aCoder decodeObjectForKey:CPTableViewHeaderViewKey];
+        _tableColumns = [aCoder decodeObjectForKey:CPTableViewTableColumnsKey];
+        _rowHeight = [aCoder decodeFloatForKey:CPTableViewRowHeightKey];
+        _intercellSpacing = [aCoder decodeFloatForKey:CPTableViewIntercellSpacingKey];
+        _allowsMultipleSelection = [aCoder decodeBoolForKey:CPTableViewMultipleSelectionKey];
+        _allowsEmptySelection = [aCoder decodeBoolForKey:CPTableViewEmptySelectionKey];
+    }
+    
+    return self;
+}
+
+- (void)encodeWithCoder:(CPCoder)aCoder
+{
+    [aCoder encodeObject:_dataSource forKey:CPTableViewDataSourceKey];
+    [aCoder encodeObject:_delegate forKey:CPTableViewDelegateKey];
+    [aCoder encodeObject:_headerView forKey:CPTableViewHeaderViewKey];
+    [aCoder encodeObject:_tableColumns forKey:CPTableViewTableColumnsKey];
+    [aCoder encodeFloat:_rowHeight forKey:CPTableViewRowHeightKey];
+    [aCoder encodeFloat:_intercellSpacing forKey:CPTableViewIntercellSpacingKey];
+    [aCoder encodeBool:_allowsMultipleSelection forKey:CPTableViewMultipleSelectionKey];
+    [aCoder encodeBool:_allowsEmptySelection forKey:CPTableViewEmptySelectionKey];
+}
+
+@end
+
 
 @implementation CPTextField (TableView)
 
