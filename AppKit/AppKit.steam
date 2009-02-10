@@ -11,9 +11,6 @@
             <string>AppKit</string>
             <key>Excluded</key>
             <array>
-                <string>CPOutlineView.j</string>
-                <string>CPTableColumn.j</string>
-                <string>CPTableView.j</string>
                 <!-- These get compiled into CGContext -->
                 <string>CoreGraphics/CGContextCanvas.j</string>
                 <string>CoreGraphics/CGContextVML.j</string>
@@ -26,9 +23,6 @@
             <string>AppKit-Rhino</string>
             <key>Excluded</key>
             <array>
-                <string>CPOutlineView.j</string>
-                <string>CPTableColumn.j</string>
-                <string>CPTableView.j</string>
                 <!-- These get compiled into CGContext -->
                 <string>CoreGraphics/CGContextCanvas.j</string>
                 <string>CoreGraphics/CGContextVML.j</string>
