@@ -29,7 +29,7 @@
 
 - (id)NS_initWithCoder:(CPCoder)aCoder
 {
-    self = [super init];
+    self = [super init];    
     
     if (self)
     {
@@ -40,6 +40,9 @@
         _target = [aCoder decodeObjectForKey:"NSTarget"];
         _action = [aCoder decodeObjectForKey:"NSAction"];
 
+//        if ([_target isKindOfClass:NSPopUpButtonCell] && _action === "_popUpItemAction:")
+//            _action = nil;
+            
         _isEnabled = ![aCoder decodeBoolForKey:"NSIsDisabled"];
         _isHidden = [aCoder decodeBoolForKey:"NSIsHidden"];
 
@@ -79,7 +82,12 @@
 
 - (id)initWithCoder:(CPCoder)aCoder
 {
-    return [self NS_initWithCoder:aCoder];
+    var isSeparator = [aCoder decodeBoolForKey:"NSIsSeparator"];
+
+    if (!isSeparator)
+        return [self NS_initWithCoder:aCoder];
+    else
+        return [[_CPMenuItemSeparator alloc] NS_initWithCoder:aCoder];
 }
 
 - (Class)classForKeyedArchiver

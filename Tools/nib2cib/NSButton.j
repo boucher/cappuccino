@@ -87,7 +87,7 @@ _CPButtonBezelStyleHeights[CPHUDBezelStyle] = 20;
                 _bezelStyle = CPHUDBezelStyle;
         }
         
-        if (_CPButtonBezelStyleHeights[_bezelStyle] != undefined)
+        if (_CPButtonBezelStyleHeights[_bezelStyle] != undefined && _isBordered)
         {
             CPLog.warn("Adjusting CPButton height from " +_frame.size.height+ " / " + _bounds.size.height+" to " + _CPButtonBezelStyleHeights[_bezelStyle]);
             _frame.size.height = _CPButtonBezelStyleHeights[_bezelStyle];

@@ -727,6 +727,11 @@ var CPPopUpButtonArrowsImage = nil;
     return contentRect;
 }
 
+- (void)_popUpItemAction:(id)sender
+{
+    [CPApp sendAction:[self action] to:[self target] from:sender];
+}
+
 @end
 
 var CPPopUpButtonMenuKey            = @"CPPopUpButtonMenuKey",

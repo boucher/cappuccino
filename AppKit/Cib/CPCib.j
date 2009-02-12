@@ -73,6 +73,19 @@ var CPCibObjectDataKey  = @"CPCibObjectDataKey";
     if (!objectData || ![objectData isKindOfClass:[_CPCibObjectData class]])
         return NO;
     
+    var objects = unarchiver._objects,
+        count = objects.length;
+        
+    window.replacements = {};
+        
+    while (count--)
+    {
+        var object = objects[count];
+        
+        if ([object respondsToSelector:@selector(_cibInstantiate)])
+            replacements[[object hash]] = [object _cibInstantiate];
+    }
+    
     [objectData establishConnectionsWithExternalNameTable:anExternalNameTable];
     
     var owner = [anExternalNameTable objectForKey:CPCibOwner],

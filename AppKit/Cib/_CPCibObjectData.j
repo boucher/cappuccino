@@ -200,6 +200,7 @@ var _CPCibObjectDataNamesKeysKey                = @"_CPCibObjectDataNamesKeysKey
         var connection = _connections[index];
         
         [connection replaceObject:_fileOwner withObject:cibOwner];
+        [connection x];
         [connection establishConnection];
     }
 }

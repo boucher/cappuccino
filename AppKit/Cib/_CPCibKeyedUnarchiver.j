@@ -26,11 +26,13 @@
     return _bundle;
 }
 
+
+
 - (id)unarchiver:(CPKeyedUnarchiver)aKeyedUnarchiver didDecodeObject:(id)anObject
 {
-    if ([anObject respondsToSelector:@selector(_cibInstantiate)])
+/*    if ([anObject respondsToSelector:@selector(_cibInstantiate)])
         return [anObject _cibInstantiate];
-
+*/
     return anObject;
 }
 
