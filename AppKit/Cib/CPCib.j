@@ -54,7 +54,7 @@ var CPCibObjectDataKey  = @"CPCibObjectDataKey";
 }
 
 - (id)initWithCibNamed:(CPString)aName bundle:(CPBundle)aBundle
-{
+{CPLog("BUNDLE: "+aBundle);
     self = [self initWithContentsOfURL:aName];
     
     if (self)
