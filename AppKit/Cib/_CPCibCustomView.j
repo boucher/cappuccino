@@ -48,8 +48,6 @@ var _CPCibCustomViewClassNameKey    = @"_CPCibCustomViewClassNameKey";
     if (self)
     {
         _className = [aCoder decodeObjectForKey:_CPCibCustomViewClassNameKey];
-    
-        [self setBackgroundColor:[CPColor blueColor]];
     }
     
     return self;
