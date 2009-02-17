@@ -38,7 +38,6 @@
         _minValue           = [cell minValue];
         _maxValue           = [cell maxValue];
         _altIncrementValue  = [cell altIncrementValue];
-        _isVertical         = [cell isVertical];
     }
     
     return self;

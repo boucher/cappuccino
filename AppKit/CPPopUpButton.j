@@ -61,11 +61,9 @@ var CPPopUpButtonArrowsImage = nil;
         _selectedIndex = CPNotFound;
         _preferredEdge = CPMaxYEdge;
         
-        [self setBezelStyle:CPTexturedRoundedBezelStyle];
-        
-        [self setImagePosition:CPImageLeft];
-        [self setAlignment:CPLeftTextAlignment];
-        [self setLineBreakMode:CPLineBreakByTruncatingTail];
+        [self setValue:CPImageLeft forThemedAttributeName:@"image-position"];
+        [self setValue:CPLeftTextAlignment forThemedAttributeName:@"alignment"];
+        [self setValue:CPLineBreakByTruncatingTail forThemedAttributeName:@"line-break-mode"];
         
         [self setMenu:[[CPMenu alloc] initWithTitle:@""]];
     }
@@ -603,6 +601,15 @@ var CPPopUpButtonArrowsImage = nil;
         if (items.length > 0)
             [items[1] setHidden:NO];
     }
+
+    var item = [_menu itemArray][index],
+        action = [item action];
+
+    if (!action || (action === @selector(_popUpItemAction:)))
+    {
+        [item setTarget:self];
+        [item setAction:@selector(_popUpItemAction:)];
+    }
 }
 
 /*!
@@ -696,21 +703,12 @@ var CPPopUpButtonArrowsImage = nil;
     
     [self selectItemAtIndex:index];
     
-    var selectedItem = [self selectedItem],
-        target = nil,
-        action = [selectedItem action];
-    
-    if (!action)
-    {
-        target = [self target];
-        action = [self action];
-    }
-    
-    // FIXME: If [selectedItem target] == nil do we use our own target?
-    else
-        target = [selectedItem target];
+    [CPApp sendAction:[aMenuItem action] to:[aMenuItem target] from:aMenuItem];
+}
 
-    [self sendAction:action to:target];
+- (void)_popUpItemAction:(id)aSender
+{
+    [self sendAction:[self action] to:[self target]];
 }
 
 - (CGRect)contentRectForBounds:(CGRect)bounds
@@ -719,7 +717,7 @@ var CPPopUpButtonArrowsImage = nil;
     
     if ([self isBordered])
     {
-        contentRect.size.width -= 16.0;
+        contentRect.size.width -= 20.0;
 
         return contentRect;
     }

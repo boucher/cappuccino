@@ -24,6 +24,7 @@
 @import "CGGeometry.j"
 
 @import "CPControl.j"
+@import "CPThemedValue.j"
 
 #include "CoreGraphics/CGGeometry.h"
 
@@ -228,96 +229,36 @@ var _CPButtonClassName                          = nil,
 */
 @implementation CPButton : CPControl
 {
-    int                     _tag;
-    int                     _state;
-    BOOL                    _allowsMixedState;
-    BOOL                    _isHighlighted;
+    int                 _tag;
+    int                 _state;
+    BOOL                _allowsMixedState;
     
-    CPImage                 _image;
-    CPImage                 _alternateImage;
+    CPString            _title;
+    CPString            _alternateTitle;
     
-    CPCellImagePosition     _imagePosition;
-    CPImageScaling          _imageScaling;
-    
-    CPString                _title;
-    CPString                _alternateTitle;
+    CPImage             _image;
+    CPImage             _alternateImage;
 
-    CPBezelStyle            _bezelStyle;
-    BOOL                    _isBordered;
-    CPControlSize           _controlSize;
+    // Display Properties
+    CPThemedValue       _bezelInset;
+    CPThemedValue       _contentInset;
     
-    BOOL                    _bezelBorderNeedsUpdate;
+    CPThemedValue       _bezelColor;
+
+    // Layout Views
+    CPView              _bezelView;
+    _CPImageAndTextView _contentView;
     
-    _CPImageAndTextView     _imageAndTextView;
+    // NS-style Display Properties
+    CPBezelStyle        _bezelStyle;
+    BOOL                _isBordered;
+    CPControlSize       _controlSize;
 }
 
-/*!
-    Initializes the CPButton class.
-    @ignore
-*/
-+ (void)initialize
++ (id)themedAttributes
 {
-    if (self != [CPButton class])
-        return;
-    
-    _CPButtonClassName = [CPButton className];
-
-    // Textured Rounded
-    _CPButtonBezelStyleIdentifiers[CPRoundedBezelStyle]             = @"Rounded";
-    _CPButtonBezelStyleIdentifiers[CPRegularSquareBezelStyle]       = @"RegularSquare";
-    _CPButtonBezelStyleIdentifiers[CPThickSquareBezelStyle]         = @"ThickSquare";
-    _CPButtonBezelStyleIdentifiers[CPThickerSquareBezelStyle]       = @"ThickerSquare";
-    _CPButtonBezelStyleIdentifiers[CPDisclosureBezelStyle]          = @"Disclosure";
-    _CPButtonBezelStyleIdentifiers[CPShadowlessSquareBezelStyle]    = @"ShadowlessSquare";
-    _CPButtonBezelStyleIdentifiers[CPCircularBezelStyle]            = @"Circular";
-    _CPButtonBezelStyleIdentifiers[CPTexturedSquareBezelStyle]      = @"TexturedSquare";
-    _CPButtonBezelStyleIdentifiers[CPHelpButtonBezelStyle]          = @"HelpButton";
-    _CPButtonBezelStyleIdentifiers[CPSmallSquareBezelStyle]         = @"SmallSquare";
-    _CPButtonBezelStyleIdentifiers[CPTexturedRoundedBezelStyle]     = @"TexturedRounded";
-    _CPButtonBezelStyleIdentifiers[CPRoundRectBezelStyle]           = @"RoundRect";
-    _CPButtonBezelStyleIdentifiers[CPRecessedBezelStyle]            = @"Recessed";
-    _CPButtonBezelStyleIdentifiers[CPRoundedDisclosureBezelStyle]   = @"RoundedDisclosure";
-    _CPButtonBezelStyleIdentifiers[CPHUDBezelStyle]                 = @"HUD";
-
-    var regularIdentifier = _CPControlIdentifierForControlSize(CPRegularControlSize),
-        smallIdentifier = _CPControlIdentifierForControlSize(CPSmallControlSize),
-        miniIdentifier = _CPControlIdentifierForControlSize(CPMiniControlSize);
-
-    // Rounded Rect
-    var prefix = _CPButtonClassName + _CPButtonBezelStyleIdentifiers[CPRoundRectBezelStyle];
-    
-    _CPButtonBezelStyleSizes[prefix + regularIdentifier]                                            = [_CGSizeMake(10.0, 18.0), _CGSizeMake(1.0, 18.0), _CGSizeMake(10.0, 18.0)];
-    _CPButtonBezelStyleSizes[prefix + regularIdentifier + _CPButtonBezelStyleHighlightedIdentifier] = [_CGSizeMake(10.0, 18.0), _CGSizeMake(1.0, 18.0), _CGSizeMake(10.0, 18.0)];
-    
-    // HUD
-    var prefix = _CPButtonClassName + _CPButtonBezelStyleIdentifiers[CPHUDBezelStyle];    
-    
-    _CPButtonBezelStyleSizes[prefix + regularIdentifier]                                            = [_CGSizeMake(13.0, 20.0), _CGSizeMake(1.0, 20.0), _CGSizeMake(13.0, 20.0)];
-    _CPButtonBezelStyleSizes[prefix + regularIdentifier + _CPButtonBezelStyleHighlightedIdentifier] = [_CGSizeMake(13.0, 20.0), _CGSizeMake(1.0, 20.0), _CGSizeMake(13.0, 20.0)];    
-
-    CPHUDBezelStyleTextColor = [CPColor whiteColor];
-
-    // Textured Rounded
-    var prefix = _CPButtonClassName + _CPButtonBezelStyleIdentifiers[CPTexturedRoundedBezelStyle];    
-    
-    _CPButtonBezelStyleSizes[prefix + regularIdentifier]                                            = [_CGSizeMake(7.0, 20.0), _CGSizeMake(1.0, 20.0), _CGSizeMake(7.0, 20.0)];
-    _CPButtonBezelStyleSizes[prefix + regularIdentifier + _CPButtonBezelStyleHighlightedIdentifier] = [_CGSizeMake(7.0, 20.0), _CGSizeMake(1.0, 20.0), _CGSizeMake(7.0, 20.0)];    
-}
-
-// Configuring Buttons
-/*!
-    Sets how the button highlights and shows its state.
-    @param aButtonType Defines the behavior of the button.
-*/
-- (void)setButtonType:(CPButtonType)aButtonType
-{
-    if (aButtonType === CPSwitchButton)
-    {
-        [self setBordered:NO];
-        [self setImage:nil];
-        [self setAlternateImage:nil];
-        [self setAlignment:CPLeftTextAlignment];
-    }
+    return [CPDictionary dictionaryWithObjects:[_CGInsetMakeZero(), _CGInsetMakeZero(), nil]
+                                       forKeys:[@"bezel-inset", @"content-inset", @"bezel-color"]];
 }
 
 - (id)initWithFrame:(CGRect)aFrame
@@ -326,62 +267,19 @@ var _CPButtonClassName                          = nil,
     
     if (self)
     {
-        [self setAlignment:CPCenterTextAlignment];
-        [self setVerticalAlignment:CPCenterVerticalTextAlignment];
-        [self setImagePosition:CPImageLeft];
-        [self setImageScaling:CPScaleNone];
+        // Should we instead override the defaults?
+        [self setValue:CPCenterTextAlignment forThemedAttributeName:@"alignment"];
+        [self setValue:CPCenterVerticalTextAlignment forThemedAttributeName:@"vertical-alignment"];
+        [self setValue:CPImageLeft forThemedAttributeName:@"image-position"];
+        [self setValue:CPScaleNone forThemedAttributeName:@"image-scaling"];
         
         _controlSize = CPRegularControlSize;
         
-        [self setBezelStyle:CPRoundRectBezelStyle];
+//        [self setBezelStyle:CPRoundRectBezelStyle];
         [self setBordered:YES];
     }
     
     return self;
-}
-
-/*!
-    Sets the position of the button's image to <code>anImagePosition</code>.
-    @param anImagePosition the position for the button's image
-*/
-- (void)setImagePosition:(CPCellImagePosition)anImagePosition
-{
-    [super setImagePosition:anImagePosition];
-    
-    [_imageAndTextView setImagePosition:[self imagePosition]];
-}
-
-/*!
-    Sets the button's images scaling method
-    @param anImageScaling the image scaling method
-*/
-- (void)setImageScaling:(CPImageScaling)anImageScaling
-{
-    [super setImageScaling:anImageScaling];
-
-    [_imageAndTextView setImageScaling:[self imageScaling]];
-}
-
-/*!
-    Sets the color of the button's text
-    @param aColor the color to use for drawing the button text
-*/
-- (void)setTextColor:(CPColor)aColor
-{
-    [super setTextColor:aColor];
-    
-    [_imageAndTextView setTextColor:[self textColor]];
-}
-
-/*!
-    Sets the font that will be used to draw the button text
-    @param aFont the font used to draw the button text
-*/
-- (void)setFont:(CPFont)aFont
-{
-    [super setFont:aFont];
-    
-    [_imageAndTextView setFont:[self font]];
 }
 
 // Setting the state
@@ -431,21 +329,38 @@ var _CPButtonClassName                          = nil,
     return _state;
 }
 
-/*!
-    Sets the alignment of the text on the button.
-    @param anAlignment an alignment object
-*/
-- (void)setAlignment:(CPTextAlignment)anAlignment
+- (void)setTitle:(CPString)aTitle
 {
-    [super setAlignment:anAlignment];
+    if (_title === aTitle)
+        return;
     
-    [_imageAndTextView setAlignment:[self alignment]];
+    _title = aTitle;
+    
+    [self setNeedsLayout];
+    [self setNeedsDisplay:YES];
 }
 
-/*!
-    Sets the image that will be drawn on the button.
-    @param anImage the image that will be drawn
-*/
+- (CPString)title
+{
+    return _title;
+}
+
+- (void)setAlternateTitle:(CPString)aTitle
+{
+    if (_alternateTitle === aTitle)
+        return;
+    
+    _alternateTitle = aTitle;
+
+    [self setNeedsLayout];
+    [self setNeedsDisplay:YES];
+}
+
+- (CPString)alternateTitle
+{
+    return _alternateTitle;
+}
+
 - (void)setImage:(CPImage)anImage
 {
     if (_image === anImage)
@@ -453,12 +368,10 @@ var _CPButtonClassName                          = nil,
     
     _image = anImage;
     
+    [self setNeedsLayout];
     [self setNeedsDisplay:YES];
 }
 
-/*!
-    Returns the image that will be drawn on the button
-*/
 - (CPImage)image
 {
     return _image;
@@ -470,7 +383,13 @@ var _CPButtonClassName                          = nil,
 */
 - (void)setAlternateImage:(CPImage)anImage
 {
+    if (_alternateImage === anImage)
+        return;
+    
     _alternateImage = anImage;
+    
+    [self setNeedsLayout];
+    [self setNeedsDisplay:YES];
 }
 
 /*!
@@ -482,138 +401,14 @@ var _CPButtonClassName                          = nil,
 }
 
 /*!
-    Sets the button's title.
-    @param aTitle the new title for the button
-*/
-- (void)setTitle:(CPString)aTitle
-{
-    if (_title == aTitle)
-        return;
-    
-    _title = aTitle;
-    
-    [self setNeedsDisplay:YES];
-}
-
-/*!
-    Returns the button's title string
-*/
-- (CPString)title
-{
-    return _title;
-}
-
-/*!
-    Lays out the button.
-*/
-- (void)tile
-{
-    var size = [self bounds].size;
-    
-    if (_isBordered)
-    {
-        var imageAndTitleSize = CGSizeMakeCopy(size);
-    
-        if (_bezelStyle == CPHUDBezelStyle)
-            imageAndTitleSize.height -= 4.0;
-        else if (_bezelStyle == CPRoundRectBezelStyle)
-            imageAndTitleSize.height -= 2.0;
-        else if (_bezelStyle == CPTexturedRoundedBezelStyle)
-            imageAndTitleSize.height -= 2.0;
-    
-        [_imageAndTextView setFrameSize:imageAndTitleSize];
-    }
-    else
-        [_imageAndTextView setFrameSize:size];
-}
-
-- (CGRect)contentRectForBounds:(CGRect)bounds
-{
-    if (_isBordered)
-    {
-        if (_bezelStyle === CPHUDBezelStyle)
-        {
-            bounds.origin.x += 5.0;
-            bounds.origin.y += 2.0;
-            bounds.size.width -= 5.0 * 2;
-            bounds.size.height -= 2.0 + 4.0;
-        }
-        
-        else if (_bezelStyle === CPRoundRectBezelStyle)
-        {
-            bounds.origin.x += 5.0;
-            bounds.origin.y += 1.0;
-            bounds.size.width -= 5.0 * 2;
-            bounds.size.height -= 1.0 + 2.0;
-        }
-        
-        else if (_bezelStyle === CPTexturedRoundedBezelStyle)
-        {
-            bounds.origin.x += 5.0;
-            bounds.origin.y += 2.0;
-            bounds.size.width -= 5.0 * 2;
-            bounds.size.height -= 2.0 + 3.0;
-        }
-    }
-
-    return bounds;
-}
-
-- (void)drawRect:(CGRect)aRect
-{
-    if (!_imageAndTextView)
-    {
-        _imageAndTextView = [[_CPImageAndTextView alloc] initWithFrame:[self contentRectForBounds:[self bounds]] control:self];
-
-        [self addSubview:_imageAndTextView];
-    }
-    else
-        [_imageAndTextView setFrame:[self contentRectForBounds:[self bounds]]];
-
-    [_imageAndTextView setText:_isHighlighted && _alternateTitle ? _alternateTitle : _title];
-    [_imageAndTextView setImage:_isHighlighted && _alternateImage ? _alternateImage : _image];
-}
-
-/*!
-    Compacts the button's frame to fit its contents.
-*/
-- (void)sizeToFit
-{    if (!_imageAndTextView)
-    {
-        _imageAndTextView = [[_CPImageAndTextView alloc] initWithFrame:[self contentRectForBounds:[self bounds]] control:self];
-
-        [self addSubview:_imageAndTextView];
-    }
-    
-    [_imageAndTextView setText:_isHighlighted && _alternateTitle ? _alternateTitle : _title];
-    [_imageAndTextView setImage:_isHighlighted && _alternateImage ? _alternateImage : _image];
-
-    [_imageAndTextView sizeToFit];
-    
-    var frame = [_imageAndTextView frame],
-        height = CGRectGetHeight(frame);
-    /*
-    if (_isBordered)
-        if (_bezelStyle == CPHUDBezelStyle)
-            height += 2.0;
-        else if (_bezelStyle == CPRoundRectBezelStyle)
-            height += 1.0;
-        else if (_bezelStyle == CPTexturedRoundedBezelStyle)
-            height += 2.0;
-    */
-    [self setFrameSize:CGSizeMake(CGRectGetWidth(frame), height)];
-}
-
-/*!
     Highlights the receiver based on <code>aFlag</code>.
     @param If <code>YES</code> the button will highlight, <code>NO</code> the button will unhighlight.
 */
 - (void)highlight:(BOOL)aFlag
 {
-    _isHighlighted = aFlag;
+    [super highlight:aFlag];
     
     [self drawBezelWithHighlight:aFlag];
-    [self setNeedsDisplay:YES];
 }
 
 /*!
@@ -647,126 +442,9 @@ var _CPButtonClassName                          = nil,
     [super stopTracking:lastPoint at:aPoint mouseIsUp:mouseIsUp];
 }
 
-/*!
-    Sets the button's control size.
-    @param aControlSize the button's new control size
-*/
-- (void)setControlSize:(CPControlSize)aControlSize
-{
-    if (_controlSize == aControlSize)
-        return;
-    
-    _controlSize = aControlSize;
-    
-    [self drawBezelWithHighlight:_isHighlighted];
-    [self _updateTextAttributes];
-}
-
-/*!
-    Returns the button's control size.
-*/
-- (CPControlSize)controlSize
-{
-    return _controlSize;
-}
-
-/*!
-    Sets whether the button has a bezeled border.
-    @param If <code>YES</code>, the the button will have a bezeled border.
-*/
-- (void)setBordered:(BOOL)isBordered
-{
-    if (_isBordered == isBordered)
-        return;
-    
-    _isBordered = isBordered;
-    
-    [self updateBackgroundColors];
-    [self drawBezelWithHighlight:_isHighlighted];
-    
-    [self tile];
-}
-
-/*!
-    Returns <code>YES</code> if the border is bezeled.
-*/
-- (BOOL)isBordered
-{
-    return _isBordered;
-}
-
-/*!
-    Sets the button's bezel style.
-    @param aBezelStye one of the predefined bezel styles
-*/
-- (void)setBezelStyle:(CPBezelStyle)aBezelStyle
-{
-    // FIXME: We need real support for these:
-    if (aBezelStyle == CPRoundedBezelStyle || 
-        aBezelStyle == CPRoundedBezelStyle ||         
-        aBezelStyle == CPRegularSquareBezelStyle ||
-        aBezelStyle == CPThickSquareBezelStyle ||
-        aBezelStyle == CPThickerSquareBezelStyle || 
-        aBezelStyle == CPDisclosureBezelStyle || 
-        aBezelStyle == CPShadowlessSquareBezelStyle || 
-        aBezelStyle == CPCircularBezelStyle || 
-        aBezelStyle == CPTexturedSquareBezelStyle || 
-        aBezelStyle == CPHelpButtonBezelStyle || 
-        aBezelStyle == CPSmallSquareBezelStyle || 
-        aBezelStyle == CPRecessedBezelStyle || 
-        aBezelStyle == CPRoundedDisclosureBezelStyle)
-        aBezelStyle = CPRoundRectBezelStyle;
-
-    if (_bezelStyle == aBezelStyle)
-        return;
-    
-    _bezelStyle = aBezelStyle;
-    
-    [self updateBackgroundColors];
-    [self drawBezelWithHighlight:_isHighlighted];
-    
-    [self _updateTextAttributes];
-    [self tile];
-}
-
-/*!
-    Returns the current bezel style
-*/
-- (int)bezelStyle
-{
-    return _bezelStyle;
-}
-
-/* @ignore */
-- (void)updateBackgroundColors
-{
-    if (_isBordered)
-    {
-        [self setBackgroundColor:_CPControlThreePartImagePattern(
-            NO,
-            _CPButtonBezelStyleSizes,
-            _CPButtonClassName,
-            _CPButtonBezelStyleIdentifiers[_bezelStyle],
-            _CPControlIdentifierForControlSize(_controlSize)) forName:CPControlNormalBackgroundColor];
-            
-        [self setBackgroundColor:_CPControlThreePartImagePattern(
-            NO,
-            _CPButtonBezelStyleSizes,
-            _CPButtonClassName,
-            _CPButtonBezelStyleIdentifiers[_bezelStyle],
-            _CPControlIdentifierForControlSize(_controlSize),
-            _CPButtonBezelStyleHighlightedIdentifier) forName:CPControlHighlightedBackgroundColor];
-    }
-    else
-    {
-        [self setBackgroundColor:nil forName:CPControlNormalBackgroundColor];
-        [self setBackgroundColor:nil forName:CPControlHighlightedBackgroundColor];
-    }
-}
-
 /* @ignore */
 - (void)drawBezelWithHighlight:(BOOL)shouldHighlight
-{   
+{   return;
     _bezelBorderNeedsUpdate = ![self window];
     
     if (_bezelBorderNeedsUpdate)
@@ -775,20 +453,141 @@ var _CPButtonClassName                          = nil,
     [self setBackgroundColorWithName:shouldHighlight ? CPControlHighlightedBackgroundColor : CPControlNormalBackgroundColor];
 }
 
-- (void)viewDidMoveToWindow
+- (CPView)createBezelView
 {
-    if (_bezelBorderNeedsUpdate)
-        [self drawBezelWithHighlight:_isHighlighted];
+    var view = [[CPView alloc] initWithFrame:_CGRectMakeZero()];
+
+    [view setHitTests:NO];
+    
+    return view;
 }
 
-/* @ignore */
-- (void)_updateTextAttributes
+- (CPView)createContentView
 {
-    if (_bezelStyle == CPHUDBezelStyle)
-        [self setTextColor:CPHUDBezelStyleTextColor];
+    var view = [[_CPImageAndTextView alloc] initWithFrame:_CGRectMakeZero()];
     
-    if (_controlSize == CPRegularControlSize)
-        [self setFont:[CPFont systemFontOfSize:11.0]];
+    return view;
+}
+
+- (CGRect)contentRectForBounds:(CGRect)bounds
+{
+    if (![self isBordered])
+        return bounds;
+        
+    var contentInset = [self currentValueForThemedAttributeName:@"content-inset"];
+
+    if (!contentInset)
+        return bounds;
+    
+    bounds.origin.x += contentInset.left;
+    bounds.origin.y += contentInset.top;
+    bounds.size.width -= contentInset.left + contentInset.right;
+    bounds.size.height -= contentInset.top + contentInset.bottom;
+    
+    return bounds;
+}
+
+- (CGRect)bezelRectForBounds:(CFRect)bounds
+{
+    if (![self isBordered])
+        return _CGRectMakeZero();
+
+    var bezelInset = [self currentValueForThemedAttributeName:@"bezel-inset"];
+    
+    if (!_CGInsetIsEmpty(bezelInset))
+        return bounds;
+    
+    bounds.origin.x += bezelInset.left;
+    bounds.origin.y += bezelInset.top;
+    bounds.size.width -= bezelInset.left + bezelInset.right;
+    bounds.size.height -= bezelInset.top + bezelInset.bottom;
+    
+    return bounds;
+}
+
+- (CGRect)rectForEphemeralSubviewNamed:(CPString)aName
+{
+    if (aName === "bezel-view")
+        return [self bezelRectForBounds:[self bounds]];
+    
+    else if (aName === "content-view")
+        return [self contentRectForBounds:[self bounds]];
+    
+    return [super rectForEphemeralSubviewNamed:aName];
+}
+
+- (CPView)createEphemeralSubviewNamed:(CPString)aName
+{
+    if (aName === "bezel-view")
+    {
+        var view = [[CPView alloc] initWithFrame:_CGRectMakeZero()];
+
+        [view setHitTests:NO];
+        
+        return view;
+    }
+    else
+        return [[_CPImageAndTextView alloc] initWithFrame:_CGRectMakeZero()];
+    
+    return [super createEphemeralSubviewNamed:aName];
+}
+
+- (void)layoutSubviews
+{
+    var bezelView = [self layoutEphemeralSubviewNamed:@"bezel-view"
+                                           positioned:CPWindowBelow
+                      relativeToEphemeralSubviewNamed:@"content-view"];
+      
+    if (bezelView)
+        [bezelView setBackgroundColor:[self currentValueForThemedAttributeName:@"bezel-color"]];
+    
+    var contentView = [self layoutEphemeralSubviewNamed:@"content-view"
+                                             positioned:CPWindowAbove
+                        relativeToEphemeralSubviewNamed:@"bezel-view"];
+    
+    if (contentView)
+    {
+        [contentView setText:((_controlState & CPControlStateHighlighted) && _alternateTitle) ? _alternateTitle : _title];
+        [contentView setImage:((_controlState & CPControlStateHighlighted) && _alternateImage) ? _alternateImage : _image];
+    
+        [contentView setFont:[self currentValueForThemedAttributeName:@"font"]];
+        [contentView setTextColor:[self currentValueForThemedAttributeName:@"text-color"]];
+        [contentView setAlignment:[self currentValueForThemedAttributeName:@"alignment"]];
+        [contentView setVerticalAlignment:[self currentValueForThemedAttributeName:@"vertical-alignment"]];
+        [contentView setLineBreakMode:[self currentValueForThemedAttributeName:@"line-break-mode"]];
+        [contentView setTextShadowColor:[self currentValueForThemedAttributeName:@"text-shadow-color"]];
+        [contentView setTextShadowOffset:[self currentValueForThemedAttributeName:@"text-shadow-offset"]];
+        [contentView setImagePosition:[self currentValueForThemedAttributeName:@"image-position"]];
+        [contentView setImageScaling:[self currentValueForThemedAttributeName:@"image-scaling"]];
+    }
+}
+
+@end
+
+@implementation CPButton (NS)
+
+- (void)setBezelStyle:(unsigned)aBezelStyle
+{
+}
+
+- (unsigned)bezelStyle
+{
+}
+
+- (void)setBordered:(BOOL)shouldBeBordered
+{
+    if (_isBordered === shouldBeBordered)
+        return;
+    
+    _isBordered = shouldBeBordered;
+    
+    [self setNeedsLayout];
+    [self setNeedsDisplay:YES];
+}
+
+- (BOOL)isBordered
+{
+    return _isBordered;
 }
 
 @end
@@ -797,7 +596,10 @@ var _CPButtonClassName                          = nil,
 var CPButtonImageKey                = @"CPButtonImageKey",
     CPButtonAlternateImageKey       = @"CPButtonAlternateImageKey",
     CPButtonTitleKey                = @"CPButtonTitleKey",
-    CPButtonAlteranteTitleKey       = @"CPButtonAlternateTitleKey",
+    CPButtonAlternateTitleKey       = @"CPButtonAlternateTitleKey",
+    CPButtonContentInsetKey         = @"CPButtonContentInsetKey",
+    CPButtonBezelInsetKey           = @"CPButtonBezelInsetKey",
+    CPButtonBezelColorKey           = @"CPButtonBezelColorKey",
     CPButtonImageAndTitleViewKey    = @"CPButtonImageAndTitleViewKey",
     CPButtonImagePositionKey        = @"CPButtonImagePositionKey",
     CPButtonImageScalingKey         = @"CPButtonImageScalingKey",
@@ -819,16 +621,19 @@ var CPButtonImageKey                = @"CPButtonImageKey",
     {
         _controlSize = CPRegularControlSize;
         
+        var theme = [self theme],
+            theClass = [self class];
+
         [self setImage:[aCoder decodeObjectForKey:CPButtonImageKey]];
         [self setAlternateImage:[aCoder decodeObjectForKey:CPButtonAlternateImageKey]];
         
         [self setTitle:[aCoder decodeObjectForKey:CPButtonTitleKey]];
-        
-        [self setImagePosition:[aCoder decodeIntForKey:CPButtonImagePositionKey]];
-        [self setImageScaling:[aCoder decodeIntForKey:CPButtonImageScalingKey]];
+        [self setAlternateTitle:[aCoder decodeObjectForKey:CPButtonAlternateTitleKey]];
     
-        [self setBezelStyle:[aCoder decodeIntForKey:CPButtonBezelStyleKey]];
-        [self setBordered:[aCoder decodeBoolForKey:CPButtonIsBorderedKey]];
+        _isBordered = [aCoder decodeBoolForKey:CPButtonIsBorderedKey];
+        
+        [self setNeedsLayout];
+        [self setNeedsDisplay:YES];
     }
     
     return self;
@@ -844,8 +649,8 @@ var CPButtonImageKey                = @"CPButtonImageKey",
     // should just automatically be created programmatically as needed.
     var actualSubviews = _subviews;
     
-    _subviews = [_subviews copy];
-    [_subviews removeObjectIdenticalTo:_imageAndTextView];
+//    _subviews = [_subviews copy];
+//    [_subviews removeObjectIdenticalTo:_imageAndTextView];
     
     [super encodeWithCoder:aCoder];
     
@@ -855,9 +660,7 @@ var CPButtonImageKey                = @"CPButtonImageKey",
     [aCoder encodeObject:_alternateImage forKey:CPButtonAlternateImageKey];
     
     [aCoder encodeObject:_title forKey:CPButtonTitleKey];
-    
-    [aCoder encodeInt:_imagePosition forKey:CPButtonImagePositionKey];
-    [aCoder encodeInt:_imageScaling forKey:CPButtonImageScalingKey];
+    [aCoder encodeObject:_alternateTitle forKey:CPButtonAlternateTitleKey];
     
     [aCoder encodeBool:_isBordered forKey:CPButtonIsBorderedKey];
     [aCoder encodeInt:_bezelStyle forKey:CPButtonBezelStyleKey];

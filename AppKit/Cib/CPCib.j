@@ -66,28 +66,30 @@ var CPCibObjectDataKey  = @"CPCibObjectDataKey";
 }
 
 - (BOOL)instantiateCibWithExternalNameTable:(CPDictionary)anExternalNameTable
-{   
+{
     var unarchiver = [[_CPCibKeyedUnarchiver alloc] initForReadingWithData:_data bundle:_bundle],
         objectData = [unarchiver decodeObjectForKey:CPCibObjectDataKey];
 
     if (!objectData || ![objectData isKindOfClass:[_CPCibObjectData class]])
         return NO;
-    
-    [objectData establishConnectionsWithExternalNameTable:anExternalNameTable];
-    
+
     var owner = [anExternalNameTable objectForKey:CPCibOwner],
         topLevelObjects = [anExternalNameTable objectForKey:CPCibTopLevelObjects];
-        
+
+    [objectData instantiateWithOwner:owner topLevelObjects:topLevelObjects]
+    [objectData establishConnectionsWithOwner:owner topLevelObjects:topLevelObjects];
+
     var menu;
+
     if ((menu = [objectData mainMenu]) != nil)
     {
          [CPApp setMainMenu:menu];
          [CPMenu setMenuBarVisible:YES];
     }
-    
-    if (topLevelObjects)
-        [topLevelObjects addObjectsFromArray:[objectData topLevelObjects]];
-    
+
+    // Display Visible Windows.
+    [objectData displayVisibleWindows];
+
     /*
 //    [objectData establishConnectionsWithOwner:owner topLevelObjects:topLevelObjects];
 //    [objectData cibInstantiateWithOwner:owner topLevelObjects:topLevelObjects];
@@ -135,6 +137,8 @@ var CPCibObjectDataKey  = @"CPCibObjectDataKey";
     // Display visible windows.
     
     return YES;*/
+
+    return YES;
 }
 
 - (BOOL)instantiateCibWithOwner:(id)anOwner topLevelObjects:(CPArray)topLevelObjects
