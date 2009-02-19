@@ -139,7 +139,7 @@
 */
 - (void)viewBoundsChanged:(CPNotification)aNotification
 {
-    [self viewFrameChanged:aNotification];
+    [self _constrainScrollPoint];
 }
 
 /*!
@@ -147,6 +147,17 @@
     @param aNotification the notification event
 */
 - (void)viewFrameChanged:(CPNotification)aNotification
+{
+    [self _constrainScrollPoint];
+}
+
+- (void)resizeSubviewsWithOldSize:(CGSize)aSize
+{
+    [super resizeSubviewsWithOldSize:aSize];
+    [self _constrainScrollPoint];
+}
+
+- (void)_constrainScrollPoint
 {
     var oldScrollPoint = [self bounds].origin;
     
@@ -177,27 +188,7 @@ var CPClipViewDocumentViewKey = @"CPScrollViewDocumentView";
 {
     if (self = [super initWithCoder:aCoder])
     {
-        _documentView = [aCoder decodeObjectForKey:CPClipViewDocumentViewKey];
-        
-        if (_documentView)
-        {
-    		[_documentView setPostsFrameChangedNotifications:YES];
-    		[_documentView setPostsBoundsChangedNotifications:YES];
-
-            var defaultCenter = [CPNotificationCenter defaultCenter];
-            
-    		[defaultCenter
-                addObserver:self
-                   selector:@selector(viewFrameChanged:)
-                       name:CPViewFrameDidChangeNotification 
-                     object:_documentView];
-
-    		[defaultCenter
-                addObserver:self
-                   selector:@selector(viewBoundsChanged:)
-                       name:CPViewBoundsDidChangeNotification 
-                     object:_documentView];
-        }
+        [self setDocumentView:[aCoder decodeObjectForKey:CPClipViewDocumentViewKey]];
     }
     
     return self;

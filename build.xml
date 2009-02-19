@@ -213,10 +213,9 @@
                 <include name = "Objective-J/" />
                 <include name = "Foundation/" />
             </fileset>
-        </copy>
-        
-        <copy todir = "${Build.Cappuccino.Tools.Lib.Frameworks-Rhino}/AppKit">
-            <fileset dir = "${Build}/Release/AppKit-Rhino" />
+            <fileset dir = "${Build}/Release-Rhino/">
+                <include name = "AppKit/" />
+            </fileset>
         </copy>
 
         <copy todir = "${Build.Cappuccino.Tools.Lib.Frameworks-Rhino-Debug}">
@@ -224,10 +223,9 @@
                 <include name = "Objective-J/" />
                 <include name = "Foundation/" />
             </fileset>
-        </copy>
-        
-        <copy todir = "${Build.Cappuccino.Tools.Lib.Frameworks-Rhino-Debug}/AppKit">
-            <fileset dir = "${Build}/Debug/AppKit-Rhino" />
+            <fileset dir = "${Build}/Debug-Rhino/">
+                <include name = "AppKit/" />
+            </fileset>
         </copy>
         
         <copy todir = "${Build.Cappuccino.Tools.Lib}/NewApplication">

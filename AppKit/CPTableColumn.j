@@ -75,11 +75,6 @@ CPTableColumnUserResizingMask   = 2;
     Object      _purgableInfosForDataView;  // (key=data view hash, value=)
 }
 
-- (id)init
-{
-    return [self initWithIdentifier:nil];
-}
-
 /*!
     Initializes the table column with the specified identifier.
     @param anIdentifier the identifier
@@ -91,23 +86,31 @@ CPTableColumnUserResizingMask   = 2;
     
     if (self)
     {
+        [self _init];
+        
         _identifier = anIdentifier;
         
         _width = 40.0;
         _minWidth = 8.0;
         _maxWidth = 1000.0;
         
-        _dataViewData = {};
-        _dataViewForView = {};
-        _purgableInfosForDataView = {};
+        var dataView = [[CPTextField alloc] initWithFrame:CPRectMakeZero()];
+        [dataView setValue:[CPColor whiteColor] forThemedAttributeName:"text-color" inControlState:CPControlStateHighlighted];
         
-        [self setDataView:[[CPTextField alloc] initWithFrame:CPRectMakeZero()]];
+        [self setDataView:dataView];
         
         _headerView = [[CPTextField alloc] initWithFrame:CPRectMakeZero()];
         [_headerView setBackgroundColor:[CPColor greenColor]];
     }
     
     return self;
+}
+
+- (void)_init
+{
+    _dataViewData = {};
+    _dataViewForView = {};
+    _purgableInfosForDataView = {};
 }
 
 /*!
@@ -390,6 +393,7 @@ CPTableColumnUserResizingMask;
 
 @end
 
+
 var CPTableColumnIdentifierKey   = @"CPTableColumnIdentifierKey",
     CPTableColumnHeaderViewKey   = @"CPTableColumnHeaderViewKey",
     CPTableColumnDataViewKey     = @"CPTableColumnDataViewKey",
@@ -402,12 +406,12 @@ var CPTableColumnIdentifierKey   = @"CPTableColumnIdentifierKey",
 
 - (id)initWithCoder:(CPCoder)aCoder
 {
-    if (self = [self init])
+    if (self = [self _init])
     {
         _identifier = [aCoder decodeObjectForKey:CPTableColumnIdentifierKey];
-        
-        _headerView = [aCoder decodeObjectForKey:CPTableColumnHeaderViewKey];
-        _dataView = [aCoder decodeObjectForKey:CPTableColumnDataViewKey];
+    
+        [self setHeaderView:[aCoder decodeObjectForKey:CPTableColumnHeaderViewKey]];
+        [self setDataView:[aCoder decodeObjectForKey:CPTableColumnDataViewKey]];
         
         _width = [aCoder decodeFloatForKey:CPTableColumnWidthKey];
         _minWidth = [aCoder decodeFloatForKey:CPTableColumnMinWidthKey];
@@ -415,18 +419,21 @@ var CPTableColumnIdentifierKey   = @"CPTableColumnIdentifierKey",
         
         _resizingMask  = [aCoder decodeBoolForKey:CPTableColumnResizingMaskKey];
     }
-    
+
     return self;
 }
 
 - (void)encodeWithCoder:(CPCoder)aCoder
 {
     [aCoder encodeObject:_identifier forKey:CPTableColumnIdentifierKey];
+    
     [aCoder encodeObject:_headerView forKey:CPTableColumnHeaderViewKey];
     [aCoder encodeObject:_dataView forKey:CPTableColumnDataViewKey];
+    
     [aCoder encodeObject:_width forKey:CPTableColumnWidthKey];
     [aCoder encodeObject:_minWidth forKey:CPTableColumnMinWidthKey];
     [aCoder encodeObject:_maxWidth forKey:CPTableColumnMaxWidthKey];
+    
     [aCoder encodeObject:_resizingMask forKey:CPTableColumnResizingMaskKey];
 }
 
