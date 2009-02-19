@@ -71,6 +71,13 @@
         <antcall target = "deploy" />
         <antcall target = "install-tools" />
     </target>
+
+    <target name = "bootstrap-min">
+        <antcall target = "deploy-bare-minimum" />
+        <antcall target = "install-tools" />
+        <antcall target = "deploy-minimum" />
+        <antcall target = "install-tools" />
+    </target>
     
     <target name = "update-install" depends = "deploy">
         <antcall target = "install-tools" />
@@ -237,6 +244,7 @@
         
         <copy file = "Tools/ojunit/ojtest" tofile = "${Build.Cappuccino.Tools.Bin}/ojtest" />
         
+        
         <!-- Tools -->
         
         <copy todir = "${Build.Cappuccino.Tools.Bin}">
@@ -311,6 +319,7 @@
         
         <antcall target = "safe-documentation" />
         
+        
         <!-- Zip -->
         
         <zip destfile = "${Build.Cappuccino}/Starter.zip">
@@ -329,6 +338,99 @@
             <fileset dir = "${Build.Cappuccino.Tools}" />
         </tar>
         
+    </target>
+
+    <target name = "deploy-minimum" >
+
+        <!-- Build Everything Debug AND Release -->
+        
+        <ant antfile = "build.xml" >
+            <property name = "Configuration" value = "Debug" />
+        </ant>
+
+        <ant antfile = "build.xml" >
+            <property name = "Configuration" value = "Release" />
+        </ant>
+        
+        <!-- Actually Deploy -->
+        
+        <copy todir = "${Build.Cappuccino.Tools.Lib.Frameworks}">
+            <fileset dir = "${Build}/Release/">
+                <include name = "Objective-J/" />
+                <include name = "Foundation/" />
+                <include name = "AppKit/" />
+            </fileset>
+        </copy>
+
+        <copy todir = "${Build.Cappuccino.Tools.Lib.Frameworks-Debug}">
+            <fileset dir = "${Build}/Debug/">
+                <include name = "Objective-J/" />
+                <include name = "Foundation/" />
+                <include name = "AppKit/" />
+            </fileset>
+        </copy>
+
+        <copy todir = "${Build.Cappuccino.Tools.Lib.Frameworks-Rhino}">
+            <fileset dir = "${Build}/Release/">
+                <include name = "Objective-J/" />
+                <include name = "Foundation/" />
+            </fileset>
+        </copy>
+        
+        <copy todir = "${Build.Cappuccino.Tools.Lib.Frameworks-Rhino}/AppKit">
+            <fileset dir = "${Build}/Release/AppKit-Rhino" />
+        </copy>
+
+        <copy todir = "${Build.Cappuccino.Tools.Lib.Frameworks-Rhino-Debug}">
+            <fileset dir = "${Build}/Debug/">
+                <include name = "Objective-J/" />
+                <include name = "Foundation/" />
+            </fileset>
+        </copy>
+        
+        <copy todir = "${Build.Cappuccino.Tools.Lib.Frameworks-Rhino-Debug}/AppKit">
+            <fileset dir = "${Build}/Debug/AppKit-Rhino" />
+        </copy>
+        
+        <copy todir = "${Build.Cappuccino.Tools.Lib}/NewApplication">
+            <fileset dir = "Tools/NewApplication" />
+        </copy>
+                
+        <copy todir = "${Build.Cappuccino.Tools.Bin}">
+            <fileset dir = "${Build}/Release/bake/bin" />
+            <fileset dir = "${Build}/Release/cplutil/bin" />
+            <fileset dir = "${Build}/Release/objj/bin" />
+            <fileset dir = "${Build}/Release/objjc/bin" />
+            <fileset dir = "${Build}/Release/press/bin" />
+            <fileset dir = "${Build}/Release/steam/bin" />
+        </copy>
+        
+        <copy file = "Tools/nib2cib/nib2cib" todir = "${Build.Cappuccino.Tools.Bin}" />
+
+        <copy todir = "${Build.Cappuccino.Tools.Lib}/nib2cib">
+            <fileset dir = "${Build}/Release/nib2cib" />
+        </copy>
+
+        <copy todir = "${Build.Cappuccino.Tools.Lib}">
+            <fileset dir = "${Build}/Release/bake/lib" />
+            <fileset dir = "${Build}/Release/cplutil/lib" />
+            <fileset dir = "${Build}/Release/objj/lib" />
+            <fileset dir = "${Build}/Release/objjc/lib" />
+            <fileset dir = "${Build}/Release/press/lib" />
+            <fileset dir = "${Build}/Release/steam/lib" />
+        </copy>
+        
+        <!-- Copy Utilities -->
+        
+        <copy file = "Tools/Utilities/ant-apache-bsf-1.7.0.jar" todir = "${Build.Cappuccino.Tools.Lib}" />
+        <copy file = "Tools/Utilities/bsf.jar" todir = "${Build.Cappuccino.Tools.Lib}" />
+        <copy file = "Tools/Utilities/commons-logging-1.1.jar" todir = "${Build.Cappuccino.Tools.Lib}" />
+        <copy file = "Tools/Utilities/js.jar" todir = "${Build.Cappuccino.Tools.Lib}" />
+
+        <!-- Copy install script -->
+
+        <copy file = "Tools/Install/install-tools" tofile = "${Build.Cappuccino.Tools}/install-tools" />
+
     </target>
     
 </project>
