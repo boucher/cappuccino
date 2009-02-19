@@ -23,6 +23,7 @@
 @import "CPFont.j"
 @import "CPShadow.j"
 @import "CPView.j"
+@import "CPKeyValueBinding.j"
 
 #include "CoreGraphics/CGGeometry.h"
 #include "Platform/Platform.h"
@@ -115,6 +116,11 @@ var CPControlBlackColor     = [CPColor blackColor];
                                        forKeys:[@"alignment", @"vertical-alignment", @"line-break-mode", @"text-color", @"font", @"text-shadow-color", @"text-shadow-offset", @"image-position", @"image-scaling"]]; 
 }
 
++ (void)initialize
+{
+    [self exposeBinding:"value"];
+}
+
 - (id)initWithFrame:(CGRect)aFrame
 {
     self = [super initWithFrame:aFrame];
@@ -128,6 +134,17 @@ var CPControlBlackColor     = [CPColor blackColor];
     }
     
     return self;
+}
+
+- (void)bind:(CPString)binding toObject:(id)anObject withKeyPath:(CPString)keyPath options:(CPDictionary)options
+{
+    if ([binding isEqual: CPValueBinding])
+    {
+        [self unbind: binding];
+        [[CPKeyValueBinding alloc] initWithBinding: @"objectValue" name:CPValueBinding to:anObject  keyPath:keyPath options:options from:self];
+    }
+    else
+        [super bind:binding toObject:anObject withKeyPath:keyPath options:options];
 }
 
 /*!
@@ -171,6 +188,11 @@ var CPControlBlackColor     = [CPColor blackColor];
 */
 - (void)sendAction:(SEL)anAction to:(id)anObject
 {
+    var theBinding = [CPKeyValueBinding getBinding:CPValueBinding forObject:self];
+
+    if (theBinding)
+        [theBinding reverseSetValueFor:@"objectValue"];
+
     [CPApp sendAction:anAction to:anObject from:self];
 }
 
@@ -568,6 +590,7 @@ BRIDGE(ImageScaling, imageScaling, "image-scaling")
     
     return _ephemeralSubviewsForNames[aViewName];
 }
+
 
 @end
 
