@@ -54,11 +54,7 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
     id                  _dataSource;
     id                  _delegate;
     
-<<<<<<< HEAD:AppKit/CPTableView.j
     CPTableHeaderView   _headerView;
-=======
-    //CPTableHeaderView   _headerView;
->>>>>>> 1f54d5de0ef3855219b8f203f9aa60c8dfe18545:AppKit/CPTableView.j
     //CPView              _cornerView;
     
     CPArray             _tableColumns;
@@ -130,34 +126,8 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
     self = [super initWithFrame:aFrame];
     
     if (self)
-<<<<<<< HEAD:AppKit/CPTableView.j
-    {   
-        _rowHeight = 17.0;
-                
-        _intercellSpacing = CPSizeMake(3.0, 2.0);
-        
-        _allowsMultipleSelection = YES;
-        _allowsEmptySelection = YES;
-        
-        _selectedRowIndexes = [CPIndexSet indexSet];
-        
-        
-        _tableCells = [];
-        _tableColumns = [];
-        _tableColumnViews = [];
-        
-        _dataViewCache = {};
-        _objectValueCache = [];
-        
-        _visibleRows = CPMakeRange(0, 0);
-        _visibleColumns = CPMakeRange(0, 0);
-        
-        _rowHeights = [];
-        _rowMinYs = [];
-=======
     {
         [self _init];
->>>>>>> 1f54d5de0ef3855219b8f203f9aa60c8dfe18545:AppKit/CPTableView.j
     }
     
     return self;
@@ -204,13 +174,8 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
     
     [dataView setFrame:CGRectMake(0.0, ROW_MIN_Y(aRowIndex), [_tableColumns[aColumnIndex] width], ROW_HEIGHT(aRowIndex))];
     
-<<<<<<< HEAD:AppKit/CPTableView.j
-    if ([dataView respondsToSelector:@selector(tableSetHighlighted:)])
-        [dataView tableSetHighlighted:[_selectedRowIndexes containsIndex:aRowIndex]];
-=======
     if ([dataView respondsToSelector:@selector(highlight:)])
         [dataView highlight:[_selectedRowIndexes containsIndex:aRowIndex]];
->>>>>>> 1f54d5de0ef3855219b8f203f9aa60c8dfe18545:AppKit/CPTableView.j
     
     if (!_objectValueCache[aColumnIndex])
         _objectValueCache[aColumnIndex] = [];
@@ -850,11 +815,7 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
 
 - (int)columnAtPoint:(CGPoint)aPoint
 {
-<<<<<<< HEAD:AppKit/CPTableView.j
-    var index = [self _columnAtY:aPoint.x]
-=======
-    var index = [self _columnAtX:aPoint.x]
->>>>>>> 1f54d5de0ef3855219b8f203f9aa60c8dfe18545:AppKit/CPTableView.j
+    var index = [self _columnAtX:aPoint.x];
     
     if (index >= 0 && index < _numberOfColumns)
         return index;
@@ -1060,8 +1021,6 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
 }
 
 /*
-<<<<<<< HEAD:AppKit/CPTableView.j
-=======
     Sets the message to be sent to the target when a cell is double clicked
     @param aSelector the selector to be performed
 */
@@ -1069,6 +1028,7 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
 {
     _doubleAction = aSelector;
 }
+
 - (SEL)doubleAction
 {
     return _doubleAction;
@@ -1078,13 +1038,13 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
 {
     return _clickedColumn;
 }
+
 - (int)clickedRow
 {
     return _clickedRow;
 }
 
 /*
->>>>>>> 1f54d5de0ef3855219b8f203f9aa60c8dfe18545:AppKit/CPTableView.j
     @ignore
 */
 - (void)trackSelection:(CPEvent)anEvent
@@ -1095,15 +1055,6 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
     
     if (type == CPLeftMouseUp)
     {
-<<<<<<< HEAD:AppKit/CPTableView.j
-        if ([anEvent clickCount] === 2)
-        {
-            CPLog.warn("edit?!");
-        }
-        else if (![_previousSelectedRowIndexes isEqualToIndexSet:_selectedRowIndexes])
-        {
-            [[CPNotificationCenter defaultCenter] postNotificationName:CPTableViewSelectionDidChangeNotification object:self userInfo:nil];
-=======
         _clickedRow = [self rowAtPoint:point];
         _clickedColumn = [self columnAtPoint:point];
         
@@ -1111,7 +1062,7 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
         {
             CPLog.warn("edit?!");
             
-            [self sendAction:_doubleAction to:_target];
+            [self sendAction:[self doubleAction] to:_target];
         }
         else
         {
@@ -1121,7 +1072,6 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
             }
             
             [self sendAction:_action to:_target];
->>>>>>> 1f54d5de0ef3855219b8f203f9aa60c8dfe18545:AppKit/CPTableView.j
         }
         
         return;
@@ -1177,25 +1127,16 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
     {
         var row = indexesToRemove[i];
         for (var column = 0; column < _numberOfColumns; column++)
-<<<<<<< HEAD:AppKit/CPTableView.j
-            if ([_tableCells[column][row] respondsToSelector:@selector(tableSetHighlighted:)])
-                [_tableCells[column][row] tableSetHighlighted:NO];
-=======
             if ([_tableCells[column][row] respondsToSelector:@selector(highlight:)])
                 [_tableCells[column][row] highlight:NO];
->>>>>>> 1f54d5de0ef3855219b8f203f9aa60c8dfe18545:AppKit/CPTableView.j
     }
+
     for (var i = 0; i < indexesToAdd.length; i++)
     {
         var row = indexesToAdd[i];
         for (var column = 0; column < _numberOfColumns; column++)
-<<<<<<< HEAD:AppKit/CPTableView.j
-            if ([_tableCells[column][row] respondsToSelector:@selector(tableSetHighlighted:)])
-                [_tableCells[column][row] tableSetHighlighted:YES];
-=======
             if ([_tableCells[column][row] respondsToSelector:@selector(highlight:)])
                 [_tableCells[column][row] highlight:YES];
->>>>>>> 1f54d5de0ef3855219b8f203f9aa60c8dfe18545:AppKit/CPTableView.j
     }
 
     // add each one we need to add, taking the selection views from removed seelctions, the pool, or new
