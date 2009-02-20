@@ -242,7 +242,7 @@
 }
 
 - (BOOL)setSelectionIndexes:(CPIndexSet)indexes 
-{
+{alert("HERE");
     if ([_selectionIndexes isEqual:indexes])
         return NO;
 

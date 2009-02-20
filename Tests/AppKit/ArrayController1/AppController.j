@@ -8,6 +8,7 @@
 
 @import <Foundation/CPObject.j>
 @import <AppKit/CPArrayController.j>
+@import <AppKit/CPTableView.j>
 
 CPLogRegister(CPLogConsole);
 
@@ -15,9 +16,10 @@ CPLogRegister(CPLogConsole);
 {
     CPArray             itemsArray;
     
-    //CPTableView         tableView;
+    CPTableView         tableView;
     //CPTextField         selectedNameField;
     //CPTextField         selectedPriceField;
+    
     CPTextField         totalCountField;
     
     CPArrayController   arrayController;
@@ -43,11 +45,23 @@ CPLogRegister(CPLogConsole);
 
     //create our UI elements
     
-    //tableView = [[CPTableView alloc] initWithFrame:CGRectMake(0, 0, 400, 200)];
-    //[tableView setCenter:[contentView center]];
+    tableView = [[CPTableView alloc] initWithFrame:CGRectMake(0, 0, 400, 200)];
+    [tableView setCenter:[contentView center]];
     
-    totalCountField = [[CPTextField alloc] initWithFrame:CGRectMake(0, 0, 300, 20)];
-    [totalCountField setCenter:[contentView center]];
+    [tableView setBackgroundColor:[CPColor redColor]];
+    
+    [contentView addSubview:tableView];
+    
+    
+    var tableColumn = [[CPTableColumn alloc] initWithIdentifier:@"price"];
+    
+    [tableColumn setWidth:100.0];
+    
+    [tableView addTableColumn:tableColumn]; 
+    
+    
+    totalCountField = [[CPTextField alloc] initWithFrame:CGRectMake([tableView frame].origin.x + 50, [tableView frame].origin.y + 220, 300, 20)];
+    //[totalCountField setCenter:[contentView center]];
     
     [totalCountField setStringValue:@"HELLO WORLD"];
     
@@ -90,19 +104,19 @@ CPLogRegister(CPLogConsole);
 			  withKeyPath:@"arrangedObjects.@sum.price" options:nil];
 	
 	
-	//var bindingOptions = [CPDictionary dictionary];
+	var bindingOptions = [CPDictionary dictionary];
 	
 	// binding options for "name"
 	//[bindingOptions setObject:@"No Name" forKey:@"NSNullPlaceholder"];
 	
 	// binding for selected "name" field
-    //[selectedNameField bind: @"value" toObject: arrayController
+    //[selectedNameField bind:CPValueBinding toObject:arrayController
 	//			withKeyPath:@"selection.name" options:bindingOptions];
 	
 	// binding for "name" column
     //var tableColumn = [tableView tableColumnWithIdentifier:@"name"];
 	
-	//[tableColumn bind:@"value" toObject: arrayController
+	//[tableColumn bind:CPValueBinding toObject:arrayController
 	//	  withKeyPath:@"arrangedObjects.name" options:bindingOptions];
     
 	
@@ -114,20 +128,20 @@ CPLogRegister(CPLogConsole);
 	//				   forKey:CPValidatesImmediatelyBindingOption];
 	
 	// binding for selected "price" field
-	//[selectedPriceField bind: @"value" toObject: arrayController
+	//[selectedPriceField bind:CPValueBinding toObject: arrayController
 	//			 withKeyPath:@"selection.price" options:bindingOptions];
 	
 	
 	// binding for "price" column
-    //tableColumn = [tableView tableColumnWithIdentifier:@"price"];
-	
-    //[tableColumn bind:@"value" toObject: arrayController
-	//	  withKeyPath:@"arrangedObjects.price" options:bindingOptions];
+    tableColumn = [tableView tableColumnWithIdentifier:@"price"];
+
+    [tableColumn bind:CPValueBinding toObject:arrayController
+		  withKeyPath:@"arrangedObjects.price" options:bindingOptions];
 	
 	
 }
 
-- (unsigned int)countOfItemsArray 
+/*- (unsigned int)countOfItemsArray 
 {
     return [itemsArray count];
 }
@@ -150,7 +164,7 @@ CPLogRegister(CPLogConsole);
 - (void)replaceObjectInItemsArrayAtIndex:(unsigned int)index withObject:(id)anObject 
 {
     [itemsArray replaceObjectAtIndex:index withObject:anObject];
-}
+}*/
 
 @end
 

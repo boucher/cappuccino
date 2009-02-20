@@ -364,7 +364,7 @@ CPTexturedBackgroundWindowMask
         var windowViewClass = [[self class] _windowViewClassForStyleMask:aStyleMask];
         
         _frame = [windowViewClass frameRectForContentRect:aContentRect];
-        _windowView = [[windowViewClass alloc] initWithFrame:CGRectMake(0.0, 0.0, CGRectGetWidth(_frame), CGRectGetHeight(_frame)) styleMask:aStyleMask owningWindow:self];
+        _windowView = [[windowViewClass alloc] initWithFrame:CGRectMake(0.0, 0.0, CGRectGetWidth(_frame), CGRectGetHeight(_frame)) styleMask:aStyleMask];
 
         [_windowView _setWindow:self];
         [_windowView setNextResponder:self];

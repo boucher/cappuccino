@@ -391,6 +391,10 @@ CPTableColumnUserResizingMask;
     return newView;
 }
 
+- (void)prepareDataView:(id)dataView inRow:(int)aRow
+{
+}
+
 @end
 
 

@@ -114,6 +114,8 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
     CPIndexSet          _currentlySelected;
     CPArray             _selectionViews;
     CPArray             _selectionViewsPool;
+    
+    SEL                 _doubleAction;
 }
 
 + (void)initialize
@@ -185,14 +187,16 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
         _objectValueCache[aColumnIndex][aRowIndex] = [_dataSource tableView:self objectValueForTableColumn:_tableColumns[aColumnIndex] row:aRowIndex];        
     
     [dataView setObjectValue:_objectValueCache[aColumnIndex][aRowIndex]];
+
+    [_tableColumns[aColumnIndex] prepareDataView:dataView inRow:aRowIndex];
     
     return dataView;
 }
 
 - (void)loadTableCellsInRect:(CGRect)aRect
 {
-   if (!_dataSource)
-        return;
+    //if (!_dataSource)
+    //    return;
 
     // Determine new visible rows and columns.
 
@@ -208,7 +212,7 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
 
     if (CPEqualRanges(_visibleRows, visibleRows) && CPEqualRanges(_visibleColumns, visibleColumns))
         return;
-    
+
     var unionVisibleRows = CPUnionRange(_visibleRows, visibleRows),
         unionVisibleColumns = CPUnionRange(_visibleColumns, visibleColumns);
     
@@ -416,6 +420,8 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
         _tableCells[_numberOfColumns][i] = nil;
         
     ++_numberOfColumns;
+
+    [aTableColumn setTableView:self];
 }
 
 /*
@@ -465,13 +471,13 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
 }
 
 /*
-    Returns the first CPTableColumn equal to the given object (as determined by the "isEqual:" selector), or nil if none exists.
-    @param anObject the object to look for
+    Returns the first CPTableColumn with an identifier equal to the given object (as determined by the "isEqual:" selector), or nil if none exists.
+    @param anObject the identifier to look for
 */
 - (CPTableColumn)tableColumnWithIdentifier:(id)anObject
 {
     for (var i = 0; i < _tableColumns.length; i++)
-        if ([_tableColumns[i] isEqual:anObject])
+        if ([[_tableColumns[i] identifier] isEqual:anObject])
             return _tableColumns[i];
     return nil;
 }
@@ -491,6 +497,16 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
 - (int)numberOfRows
 {
     return _numberOfRows;
+}
+
+- (int)_numberOfRows
+{
+    var binding = [CPKeyValueBinding getBinding:"content" forObject:self];
+
+    if (binding && [binding respondsToSelector:@selector(numberOfRowsInTableView:)])
+        return [binding numberOfRowsInTableView:self];
+
+    return [_dataSource numberOfRowsInTableView:self];
 }
 
 /*
@@ -601,7 +617,7 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
 */
 - (void)noteNumberOfRowsChanged
 {
-    var numberOfRows = [_dataSource numberOfRowsInTableView:self];
+    var numberOfRows = [self _numberOfRows];
 
     if (_numberOfRows != numberOfRows)
     {
@@ -688,7 +704,7 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
 {
     var oldNumberOfRows = _numberOfRows;
     
-    _numberOfRows = [_dataSource numberOfRowsInTableView:self];
+    _numberOfRows = [self _numberOfRows];
 
     if (oldNumberOfRows != _numberOfRows)
     {
@@ -902,10 +918,14 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
 {
     // FIXME: should this be subject to the delegate filters, etc? 
     
+    [self willChangeValueForKey:@"selectedRowIndexes"];
+    alert("THERE");
     if (extend)
         _selectedRowIndexes = [[_selectedRowIndexes copy] addIndexes:indexes];
     else if ([indexes count] > 0 || _allowsEmptySelection)
         _selectedRowIndexes = [indexes copy];
+    
+    [self didChangeValueForKey:@"selectedRowIndexes"];
     
     [self _drawSelection];
 }
@@ -1062,7 +1082,7 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
         {
             CPLog.warn("edit?!");
             
-            [self sendAction:[self doubleAction] to:_target];
+            [self sendAction:[self doubleAction] to:[self target]];
         }
         else
         {
@@ -1253,3 +1273,5 @@ var CPTableViewDataSourceKey        = @"CPTableViewDataSourceKey",
 }
 
 @end
+
+@import "CPTableView+Bindings.j"

@@ -138,10 +138,10 @@ var CPControlBlackColor     = [CPColor blackColor];
 
 - (void)bind:(CPString)binding toObject:(id)anObject withKeyPath:(CPString)keyPath options:(CPDictionary)options
 {
-    if ([binding isEqual: CPValueBinding])
+    if ([binding isEqual:CPValueBinding])
     {
         [self unbind: binding];
-        [[CPKeyValueBinding alloc] initWithBinding: @"objectValue" name:CPValueBinding to:anObject  keyPath:keyPath options:options from:self];
+        [[[[self class] classForBinding:binding] alloc] initWithBinding: @"objectValue" name:CPValueBinding to:anObject  keyPath:keyPath options:options from:self];
     }
     else
         [super bind:binding toObject:anObject withKeyPath:keyPath options:options];
