@@ -341,7 +341,7 @@
     else
     {
         var indexes = [CPIndexSet indexSetWithIndexesInRange:CPMakeRange(0, [self count])];
-        [self removeObserver:observer fromObjectsAtIndexes:indexes forKeyPath:aKeyPath];
+        [self removeObserver:anObserver fromObjectsAtIndexes:indexes forKeyPath:aKeyPath];
     }
 }
 
