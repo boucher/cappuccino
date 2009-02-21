@@ -919,7 +919,7 @@ var _CPTableViewWillDisplayCellSelector                         = 1 << 0,
     // FIXME: should this be subject to the delegate filters, etc? 
     
     [self willChangeValueForKey:@"selectedRowIndexes"];
-    alert("THERE");
+
     if (extend)
         _selectedRowIndexes = [[_selectedRowIndexes copy] addIndexes:indexes];
     else if ([indexes count] > 0 || _allowsEmptySelection)
