@@ -132,6 +132,8 @@
             <fileset dir = "${Build.Cappuccino}/Documentation/html" />
         </copy>
         
+        <delete file="debug.txt"/>
+        
     </target>
 
     <!-- Deploying -->

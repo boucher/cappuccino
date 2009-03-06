@@ -104,6 +104,9 @@ var CPControlBlackColor     = [CPColor blackColor];
     
     JSObject            _ephemeralSubviewsForNames;
     CPSet               _ephereralSubviews;
+
+    CPString            _toolTip;
+    
     
     // FIXME: Who uses this?
     BOOL _isBezeled;
@@ -203,6 +206,57 @@ var CPControlBlackColor     = [CPColor blackColor];
     _sendActionOn = mask;
     
     return previousMask;
+}
+
+/*!
+    Returns the button's image scaling method
+*/
+- (CPImageScaling)imageScaling
+{
+    return _imageScaling;
+}
+
+/*!
+    Sets the shadow for the receiver's text.
+    @param aTextShadow the text shadow
+*/
+- (void)setTextShadow:(CPShadow)aTextShadow
+{
+#if PLATFORM(DOM)
+    _DOMElement.style.textShadow = [_textShadow = aTextShadow cssString];
+#endif
+}
+
+/*!
+    Returns the receiver's text shadow
+*/
+- (CPShadow)textShadow
+{
+    return _textShadow;
+}
+
+/*!
+    Sets the tooltip for the receiver.
+    @param aToolTip the tooltip
+*/
+-(void)setToolTip:(CPString)aToolTip
+{
+    if (_toolTip == aToolTip)
+        return;
+    
+    _toolTip = aToolTip;
+
+#if PLATFORM(DOM)
+    _DOMElement.title = aToolTip;
+#endif
+}
+
+/*!
+    Returns the receiver's tooltip
+*/
+-(CPString)toolTip
+{
+    return _toolTip;
 }
 
 /*!

@@ -701,7 +701,7 @@
 */
 - (CPArray)arrayByAddingObject:(id)anObject
 {
-    if (!anObject)
+    if (anObject === nil || anObject === undefined)
         [CPException raise:CPInvalidArgumentException
                     reason:"arrayByAddingObject: object can't be nil"];
 
