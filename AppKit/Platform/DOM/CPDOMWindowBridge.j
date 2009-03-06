@@ -103,6 +103,7 @@ var CPDOMWindowGetFrame,
         _DOMBodyElement = document.getElementsByTagName("body")[0];
         _DOMBodyElement.innerHTML = ""; // Get rid of anything that might be lingering in the body element.
         _DOMBodyElement.style.overflow = "hidden";
+        _DOMBodyElement.style.webkitTouchCallout = "none";
         
         if (document.documentElement)
             document.documentElement.style.overflow = "hidden";
@@ -149,6 +150,10 @@ var CPDOMWindowGetFrame,
             resizeEventImplementation = class_getMethodImplementation(theClass, resizeEventSelector),
             resizeEventCallback = function (anEvent) { resizeEventImplementation(self, nil, anEvent); },
             
+            touchEventSelector = @selector(_bridgeTouchEvent:),
+            touchEventImplementation = class_getMethodImplementation(theClass, touchEventSelector),
+            touchEventCallback = function (anEvent) { touchEventImplementation(self, nil, anEvent); },
+
             theDocument = _DOMWindow.document;
         
         if (document.addEventListener)
@@ -162,6 +167,12 @@ var CPDOMWindowGetFrame,
             theDocument.addEventListener(CPDOMEventKeyUp, keyEventCallback, NO);
             theDocument.addEventListener(CPDOMEventKeyDown, keyEventCallback, NO);
             theDocument.addEventListener(CPDOMEventKeyPress, keyEventCallback, NO);
+            
+            
+            theDocument.addEventListener(CPDOMEventTouchStart, touchEventCallback, NO);
+            theDocument.addEventListener(CPDOMEventTouchEnd, touchEventCallback, NO);
+            theDocument.addEventListener(CPDOMEventTouchMove, touchEventCallback, NO);
+            theDocument.addEventListener(CPDOMEventTouchCancel, touchEventCallback, NO);
             
             //FIXME: does firefox really need a different value?
             _DOMWindow.addEventListener("DOMMouseScroll", scrollEventCallback, NO);
@@ -854,6 +865,70 @@ var CTRL_KEY_CODE   = 17;
     {
         objj_exception_report(anException, {path:@"CPDOMWindowBridge.j"});
     }
+}
+
+// DOM event properties used in mouse bridge code
+
+// type
+// clientX
+// clientY
+// timestamp
+// target/srcElement
+// shiftKey,ctrlKey,altKey,metaKey
+
+/* @ignore */
+- (void)_bridgeTouchEvent:(DOMEvent)aDOMEvent
+{        
+    try
+    {
+        if (aDOMEvent.touches && (aDOMEvent.touches.length == 1 || (aDOMEvent.touches.length == 0 && aDOMEvent.changedTouches.length == 1)))
+        {
+            var newEvent = {};
+            
+            switch(aDOMEvent.type)
+            {
+                case CPDOMEventTouchStart:  newEvent.type = CPDOMEventMouseDown;
+                                            break;
+                case CPDOMEventTouchEnd:    newEvent.type = CPDOMEventMouseUp;
+                                            break;
+                case CPDOMEventTouchMove:   newEvent.type = CPDOMEventMouseMoved;
+                                            break;
+                case CPDOMEventTouchCancel: newEvent.type = CPDOMEventMouseUp;
+                                            break;
+            }
+    
+            var touch = aDOMEvent.touches.length ? aDOMEvent.touches[0] : aDOMEvent.changedTouches[0];
+            
+            newEvent.clientX = touch.clientX;
+            newEvent.clientY = touch.clientY;
+            
+            newEvent.timestamp = aDOMEvent.timestamp;
+            newEvent.target = aDOMEvent.target;
+            
+            newEvent.shiftKey = newEvent.ctrlKey = newEvent.altKey = newEvent.metaKey = false;
+            
+                newEvent.preventDefault = function(){if(aDOMEvent.preventDefault) aDOMEvent.preventDefault()};
+                newEvent.stopPropagation = function(){if(aDOMEvent.stopPropagation) aDOMEvent.stopPropagation()};
+            
+            [self _bridgeMouseEvent:newEvent];
+        
+            return;
+        }
+        else
+        {
+            if (aDOMEvent.preventDefault)
+                aDOMEvent.preventDefault();
+            
+            if (aDOMEvent.stopPropagation)
+                aDOMEvent.stopPropagation();
+        }
+    }
+    catch(e)
+    {
+        objj_exception_report(e, {path:@"CPDOMWindowBridge.j"});
+    }
+    
+    // handle touch cases specifically
 }
 
 /* @ignore */
