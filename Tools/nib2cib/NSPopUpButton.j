@@ -34,6 +34,17 @@
         
         _menu           = [cell menu];
         
+        var allMenuItems = [_menu itemArray],
+            count = [allMenuItems count];
+
+        while (count--)
+        {
+            var item = allMenuItems[count];
+
+            if ([[item target] isKindOfClass:NSPopUpButtonCell])
+                [item setTarget:self];
+        }
+
          // make sure it's not null/undefined
         //FIXME push this check to CPPopUpButton?
         _selectedIndex  = [cell selectedIndex] || 0;

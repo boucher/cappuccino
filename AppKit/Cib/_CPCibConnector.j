@@ -27,6 +27,15 @@ var _CPCibConnectorSourceKey        = @"_CPCibConnectorSourceKey",
         _destination = replacement;
 }
 
+- (void)x
+{
+    if (replacements[[_source hash]])
+        _source = replacements[[_source hash]];
+
+    if (replacements[[_destination hash]])
+        _destination = replacements[[_destination hash]]
+}
+
 @end
 
 @implementation _CPCibConnector (CPCoding)

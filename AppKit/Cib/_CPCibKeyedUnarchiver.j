@@ -1,7 +1,6 @@
 
 @import <Foundation/CPKeyedUnarchiver.j>
 
-
 @implementation _CPCibKeyedUnarchiver : CPKeyedUnarchiver
 {
     CPBundle    _bundle;
@@ -24,6 +23,14 @@
 - (CPBundle)bundle
 {
     return _bundle;
+}
+
+- (id)unarchiver:(CPKeyedUnarchiver)aKeyedUnarchiver didDecodeObject:(id)anObject
+{
+/*    if ([anObject respondsToSelector:@selector(_cibInstantiate)])
+        return [anObject _cibInstantiate];
+*/
+    return anObject;
 }
 
 - (void)replaceObjectAtUID:(int)aUID withObject:(id)anObject

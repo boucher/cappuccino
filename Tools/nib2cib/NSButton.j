@@ -89,12 +89,17 @@ _CPButtonBezelStyleHeights[CPHUDBezelStyle] = 20;
                 _bezelStyle = CPHUDBezelStyle;
         }
         
-        //if (_CPButtonBezelStyleHeights[_bezelStyle] != undefined)
+        if (_CPButtonBezelStyleHeights[_bezelStyle] != undefined && _isBordered)
         {
             //CPLog.warn("Adjusting CPButton height from " +_frame.size.height+ " / " + _bounds.size.height+" to " + _CPButtonBezelStyleHeights[_bezelStyle]);
             _frame.size.height = 24.0;//_CPButtonBezelStyleHeights[_bezelStyle];
             _bounds.size.height = 24.0;//_CPButtonBezelStyleHeights[_bezelStyle];
         }
+
+        if ([cell image])
+            [self setImage:[cell image]];
+        if ([cell alternateImage])
+            [self setAlternateImage:[cell alternateImage]];
     }
     
     return self;
@@ -124,6 +129,9 @@ _CPButtonBezelStyleHeights[CPHUDBezelStyle] = 20;
     int         _bezelStyle     @accessors(readonly, getter=bezelStyle);
     
     CPString    _title          @accessors(readonly, getter=title);
+    
+    CPImage     _image          @accessors(readonly, getter=image);
+    CPImage     _alternateImage @accessors(readonly, getter=alternateImage);
 }
 
 - (id)initWithCoder:(CPCoder)aCoder
@@ -140,6 +148,9 @@ _CPButtonBezelStyleHeights[CPHUDBezelStyle] = 20;
         
         // NSContents for NSButton is actually the title
         _title = [aCoder decodeObjectForKey:@"NSContents"];
+        
+        _image = [aCoder decodeObjectForKey:@"NSNormalImage"];
+        _alternateImage = [aCoder decodeObjectForKey:@"NSAlternateImage"];
     }
     
     return self;

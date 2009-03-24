@@ -695,6 +695,11 @@ CPPopUpButtonStatePullsDown = 1 << 12;
     [self sendAction:[self action] to:[self target]];
 }
 
+- (void)_popUpItemAction:(id)sender
+{
+    [CPApp sendAction:[self action] to:[self target] from:sender];
+}
+
 @end
 
 var CPPopUpButtonMenuKey            = @"CPPopUpButtonMenuKey",
