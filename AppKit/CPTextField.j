@@ -338,7 +338,7 @@ CPTextFieldStatePlaceholder = 1 << 13;
 
 /* @ignore */
 - (BOOL)becomeFirstResponder
-{
+{    
     var string = [self stringValue];
 
     [self setStringValue:""];
@@ -562,6 +562,16 @@ CPTextFieldStatePlaceholder = 1 << 13;
 - (CPString)placeholderString
 {
     return _placeholderString;
+}
+
+/*!
+    @ignore
+*/
+- (BOOL)_shouldShowPlaceholderString
+{
+    var string = [self stringValue];
+    
+    return (!string || [string length] === 0) && [_placeholderString length] > 0;
 }
 
 /*!
