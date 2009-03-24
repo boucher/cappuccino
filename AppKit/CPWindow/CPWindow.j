@@ -172,6 +172,7 @@ CPWindowBelow                   = 2;
 CPWindowWillCloseNotification       = @"CPWindowWillCloseNotification";
 CPWindowDidBecomeMainNotification   = @"CPWindowDidBecomeMainNotification";
 CPWindowDidResignMainNotification   = @"CPWindowDidResignMainNotification";
+CPWindowDidMoveNotification         = @"CPWindowDidMoveNotification";
 
 
 var SHADOW_MARGIN_LEFT      = 20.0,
@@ -231,58 +232,58 @@ var CPWindowSaveImage       = nil,
 */
 @implementation CPWindow : CPResponder
 {
-    int                 _windowNumber;
-    unsigned            _styleMask;
-    CGRect              _frame;
-    int                 _level;
-    BOOL                _isVisible;
-    BOOL                _isAnimating;
-    BOOL                _hasShadow;
-    BOOL                _isMovableByWindowBackground;
-    
-    BOOL                _isDocumentEdited;
-    BOOL                _isDocumentSaving;
-    
-    CPNinePartImageView _shadowView;
-    
-    CPView              _windowView;
-    CPView              _contentView;
-    CPView              _toolbarView;
-    
-    CPView              _mouseOverView;
-    CPView              _leftMouseDownView;
-    CPView              _rightMouseDownView;
-    
-    CPToolbar           _toolbar;
-    CPResponder         _firstResponder;
-    id                  _delegate;
-    
-    CPString            _title;
-    
-    BOOL                _acceptsMouseMovedEvents;
-    BOOL                _ignoresMouseEvents;
-    
-    CPWindowController  _windowController;
-    
-    CGSize              _minSize;
-    CGSize              _maxSize;
-    
-    CGRect              _resizeFrame;
-    CGPoint             _mouseDraggedPoint;
-    
-    CPUndoManager       _undoManager;
-    CPURL               _representedURL;
-    
-    CPArray             _registeredDraggedTypes;
-    
+    int                         _windowNumber;
+    unsigned                    _styleMask;
+    CGRect                      _frame;
+    int                         _level;
+    BOOL                        _isVisible;
+    BOOL                        _isAnimating;
+    BOOL                        _hasShadow;
+    BOOL                        _isMovableByWindowBackground;
+
+    BOOL                        _isDocumentEdited;
+    BOOL                        _isDocumentSaving;
+
+    CPImageView                 _shadowView;
+
+    CPView                      _windowView;
+    CPView                      _contentView;
+    CPView                      _toolbarView;
+
+    CPView                      _mouseOverView;
+    CPView                      _leftMouseDownView;
+    CPView                      _rightMouseDownView;
+
+    CPToolbar                   _toolbar;
+    CPResponder                 _firstResponder;
+    id                          _delegate;
+
+    CPString                    _title;
+
+    BOOL                        _acceptsMouseMovedEvents;
+    BOOL                        _ignoresMouseEvents;
+
+    CPWindowController          _windowController;
+
+    CGSize                      _minSize;
+    CGSize                      _maxSize;
+
+    CPUndoManager               _undoManager;
+    CPURL                       _representedURL;
+
+    CPArray                     _registeredDraggedTypes;
+
     // Bridge Support
 #if PLATFORM(DOM)
-    DOMElement          _DOMElement;
+    DOMElement                  _DOMElement;
 #endif
-    CPDOMWindowBridge   _bridge;
-    unsigned            _autoresizingMask;
+    CPDOMWindowBridge           _bridge;
+    unsigned                    _autoresizingMask;
     
-    BOOL                _delegateRespondsToWindowWillReturnUndoManagerSelector;
+    BOOL                        _delegateRespondsToWindowWillReturnUndoManagerSelector;
+
+    BOOL                        _isFullBridge;
+    _CPWindowFullBridgeSession _fullBridgeSession;
 }
 
 /*
@@ -346,24 +347,23 @@ CPTexturedBackgroundWindowMask
     
     if (self)
     {
+        _isFullBridge = NO;
+
         // Set up our window number.
         _windowNumber = [CPApp._windows count];
         CPApp._windows[_windowNumber] = self;
         
         _styleMask = aStyleMask;
-        _level = aStyleMask === CPBorderlessBridgeWindowMask ? CPBackgroundWindowLevel : CPNormalWindowLevel;
+        _level = CPNormalWindowLevel;
         
         _minSize = CGSizeMake(0.0, 0.0);
         _maxSize = CGSizeMake(1000000.0, 1000000.0);
-        
-        if (_styleMask & CPBorderlessBridgeWindowMask)
-            _autoresizingMask = CPWindowWidthSizable | CPWindowHeightSizable;
 
         // Create our border view which is the actual root of our view hierarchy.
         var windowViewClass = [[self class] _windowViewClassForStyleMask:aStyleMask];
         
         _frame = [windowViewClass frameRectForContentRect:aContentRect];
-        _windowView = [[windowViewClass alloc] initWithFrame:CGRectMake(0.0, 0.0, CGRectGetWidth(_frame), CGRectGetHeight(_frame)) styleMask:aStyleMask owningWindow:self];
+        _windowView = [[windowViewClass alloc] initWithFrame:CGRectMake(0.0, 0.0, CGRectGetWidth(_frame), CGRectGetHeight(_frame)) styleMask:aStyleMask];
 
         [_windowView _setWindow:self];
         [_windowView setNextResponder:self];
@@ -392,7 +392,10 @@ CPTexturedBackgroundWindowMask
 
         [self setNextResponder:CPApp];
 
-        [self setHasShadow:aStyleMask !== CPBorderlessWindowMask && !(aStyleMask & CPBorderlessBridgeWindowMask)];
+        [self setHasShadow:aStyleMask !== CPBorderlessWindowMask];
+
+        if (aStyleMask & CPBorderlessBridgeWindowMask)
+            [self setFullBridge:YES];
     }
     
     return self;
@@ -406,13 +409,94 @@ CPTexturedBackgroundWindowMask
     if (aStyleMask & CPHUDBackgroundWindowMask)
         return _CPHUDWindowView;
     
-    else if (aStyleMask & CPBorderlessBridgeWindowMask)
-        return _CPBorderlessBridgeWindowView;
-    
     else if (aStyleMask === CPBorderlessWindowMask)
         return _CPBorderlessWindowView;
     
     return _CPStandardWindowView;
+}
+
++ (Class)_windowViewClassForFullBridgeStyleMask:(unsigned)aStyleMask
+{
+    return _CPBorderlessBridgeWindowView;
+}
+
+- (void)_setWindowView:(CPView)aWindowView
+{
+    if (_windowView === aWindowView)
+        return;
+
+    var oldWindowView = _windowView;
+
+    _windowView = aWindowView;
+
+#if PLATFORM(DOM)
+    if (oldWindowView)
+    {
+        [oldWindowView _setWindow:nil];
+        [oldWindowView noteToolbarChanged];
+
+        CPDOMDisplayServerRemoveChild(_DOMElement, oldWindowView._DOMElement);
+    }
+
+    if (_windowView)
+    {
+        CPDOMDisplayServerAppendChild(_DOMElement, _windowView._DOMElement);
+
+        var contentRect = [_contentView convertRect:[_contentView bounds] toView:nil];
+
+        contentRect.origin = [self convertBaseToBridge:contentRect.origin];
+
+        [_windowView _setWindow:self];
+        [_windowView setNextResponder:self];
+        [_windowView addSubview:_contentView];
+        [_windowView setTitle:_title];
+        [_windowView noteToolbarChanged];
+
+        [self setFrame:[self frameRectForContentRect:contentRect]];
+    }
+#endif
+}
+
+- (void)setFullBridge:(BOOL)shouldBeFullBridge
+{
+    shouldBeFullBridge = !!shouldBeFullBridge;
+
+    if (_isFullBridge === shouldBeFullBridge)
+        return;
+
+    _isFullBridge = shouldBeFullBridge;
+
+    if (_isFullBridge)
+    {
+        _fullBridgeSession = _CPWindowFullBridgeSessionMake(_windowView, [self contentRectForFrameRect:[self frame]], [self hasShadow], [self level]);
+
+        var fullBridgeWindowViewClass = [[self class] _windowViewClassForFullBridgeStyleMask:_styleMask],
+            windowView = [[fullBridgeWindowViewClass alloc] initWithFrame:CGRectMakeZero() styleMask:_styleMask];
+
+        [self _setWindowView:windowView];
+
+        [self setLevel:CPBackgroundWindowLevel];
+        [self setHasShadow:NO];
+        [self setAutoresizingMask:CPWindowWidthSizable | CPWindowHeightSizable];
+        [self setFrame:[_bridge contentBounds]];
+    }
+    else
+    {
+        var windowView = _fullBridgeSession.windowView;
+
+        [self _setWindowView:windowView];
+
+        [self setLevel:_fullBridgeSession.level];
+        [self setHasShadow:_fullBridgeSession.hasShadow];
+        [self setAutoresizingMask:CPWindowNotSizable];
+
+        [self setFrame:[windowView frameRectForContentRect:_fullBridgeSession.contentRect]];
+    }
+}
+
+- (BOOL)isFullBridge
+{
+    return _isFullBridge;
 }
 
 /*!
@@ -508,6 +592,8 @@ CPTexturedBackgroundWindowMask
 #if PLATFORM(DOM)
     CPDOMDisplayServerSetStyleLeftTop(_DOMElement, NULL, origin.x, origin.y);
 #endif
+
+    [[CPNotificationCenter defaultCenter] postNotificationName:CPWindowDidMoveNotification object:self];
 }
 
 /*!
@@ -655,7 +741,7 @@ CPTexturedBackgroundWindowMask
     [_contentView setFrame:[self contentRectForFrameRect:bounds]];
     
     [_contentView setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
-    [_windowView addSubview:_contentView];// positioned:CPWindowBelow relativeTo:nil];
+    [_windowView addSubview:_contentView];
 }
 
 /*!
@@ -830,6 +916,8 @@ CPTexturedBackgroundWindowMask
 */
 - (void)setDelegate:(id)aDelegate
 {
+    // FIXME: Unregister for notifications!
+
     _delegate = aDelegate;
     
     _delegateRespondsToWindowWillReturnUndoManagerSelector = [_delegate respondsToSelector:@selector(windowWillReturnUndoManager:)];
@@ -848,6 +936,13 @@ CPTexturedBackgroundWindowMask
             addObserver:_delegate
                selector:@selector(windowDidResignMain:)
                    name:CPWindowDidResignMainNotification
+                 object:self];
+
+    if ([_delegate respondsToSelector:@selector(windowDidMove:)])
+        [defaultCenter
+            addObserver:_delegate
+               selector:@selector(windowDidMove:)
+                   name:CPWindowDidMoveNotification
                  object:self];
 }
 
@@ -1446,7 +1541,27 @@ CPTexturedBackgroundWindowMask
 
 - (void)_noteToolbarChanged
 {
+    var frame = CGRectMakeCopy([self frame]);
+
     [_windowView noteToolbarChanged];
+
+    if (_isFullBridge)
+        var newFrame = [_bridge contentBounds];
+
+    else
+    {
+        var newFrame = CGRectMakeCopy([self frame]);
+
+        newFrame.origin = frame.origin;
+    }
+
+    [self setFrame:newFrame];
+    /*
+    [_windowView setAnimatingToolbar:YES];
+    [self setFrame:frame];
+    [self setFrame:newFrame display:YES animate:YES];
+    [_windowView setAnimatingToolbar:NO];
+    */
 }
 
 /* @ignore */
@@ -1571,7 +1686,7 @@ CPTexturedBackgroundWindowMask
 
     _bridge = aBridge;
     
-    if (_styleMask & CPBorderlessBridgeWindowMask)
+    if ([self isFullBridge])
         [self setFrame:[aBridge contentBounds]];
 }
 
@@ -1580,7 +1695,7 @@ CPTexturedBackgroundWindowMask
 */
 - (void)resizeWithOldBridgeSize:(CGSize)aSize
 {
-    if (_styleMask & CPBorderlessBridgeWindowMask)
+    if ([self isFullBridge])
         return [self setFrame:[_bridge visibleFrame]];
     
     if (_autoresizingMask == CPWindowNotSizable)
@@ -1732,6 +1847,11 @@ var interpolate = function(fromValue, toValue, progress)
 }
 
 @end
+
+function _CPWindowFullBridgeSessionMake(aWindowView, aContentRect, hasShadow, aLevel)
+{
+    return { windowView:aWindowView, contentRect:aContentRect, hasShadow:hasShadow, level:aLevel };
+}
 
 @import "_CPWindowView.j"
 @import "_CPStandardWindowView.j"

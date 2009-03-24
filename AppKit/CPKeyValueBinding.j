@@ -23,6 +23,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+@import <Foundation/CPObject.j>
+@import <Foundation/CPArray.j>
+@import <Foundation/CPDictionary.j>
+
 var exposedBindingsMap = [CPDictionary new],
     bindingsMap = [CPDictionary new];
     
@@ -55,7 +59,7 @@ var CPBindingOperationAnd = 0,
 
 + (CPKeyValueBinding)getBinding:(CPString)aBinding forObject:(id)anObject
 {
-    return [[bindingsMap objectForKey:anObject] objectForKey:aBinding];
+    return [[bindingsMap objectForKey:[anObject hash]] objectForKey:aBinding];
 }
 
 + (CPDictionary)infoForBinding:(CPString)aBinding forObject:(id)anObject
@@ -106,26 +110,29 @@ var CPBindingOperationAnd = 0,
 - (id)initWithBinding:(CPString)aBinding name:(CPString)aName to:(id)aDestination keyPath:(CPString)aKeyPath options:(CPDictionary)options from:(id)aSource
 {
     self = [super init];
-    CPLog("creating CPKeyValueBinding with binding: "+aBinding+" name: "+aName+" to: "+aDestination+" keyPath: "+aKeyPath+" from: "+aSource);
-    _source = aSource;
-    _info   = [CPDictionary dictionaryWithObjects:[aDestination, aKeyPath] forKeys:[CPObservedObjectKey, CPObservedKeyPathKey]];
-    
-    if (options)
-        [_info setObject:options forKey:CPOptionsKey];
-    
-    //_replacementKeyPathForBinding
-    
-    [aDestination addObserver:self forKeyPath:aKeyPath options:CPKeyValueObservingOptionNew context:aBinding];
-    
-    var bindings = [bindingsMap objectForKey:[_source hash]];
-    if (!bindings)
-    {
-        bindings = [CPDictionary new];
-        [bindingsMap setObject:bindings forKey:[_source hash]];
-    }
 
-    [bindings setObject:self forKey:aName];
-    [self setValueFor:aBinding];
+    if (self)
+    {
+        _source = aSource;
+        _info   = [CPDictionary dictionaryWithObjects:[aDestination, aKeyPath] forKeys:[CPObservedObjectKey, CPObservedKeyPathKey]];
+        
+        if (options)
+            [_info setObject:options forKey:CPOptionsKey];
+        
+        //_replacementKeyPathForBinding
+        
+        [aDestination addObserver:self forKeyPath:aKeyPath options:CPKeyValueObservingOptionNew context:aBinding];
+        
+        var bindings = [bindingsMap objectForKey:[_source hash]];
+        if (!bindings)
+        {
+            bindings = [CPDictionary new];
+            [bindingsMap setObject:bindings forKey:[_source hash]];
+        }
+    
+        [bindings setObject:self forKey:aName];
+        [self setValueFor:aBinding];
+    }
 
     return self;
 }
@@ -138,7 +145,7 @@ var CPBindingOperationAnd = 0,
         newValue = [destination valueForKeyPath:keyPath];
 
     newValue = [self transformValue:newValue withOptions:options];
-    CPLog.trace("Setting value for: "+aBinding+" value: "+newValue);
+
     [_source setValue:newValue forKey:aBinding];
 }
 
@@ -157,14 +164,8 @@ var CPBindingOperationAnd = 0,
 {
     if (!changes)
         return;
-        
-    var options = [_info objectForKey:CPOptionsKey],
-        newValue = [changes objectForKey:CPKeyValueChangeNewKey];
 
-    newValue = [self transformValue:newValue withOptions:options];
-    
-    if (![newValue isEqual:[_source valueForKey:context]])
-        [_source setValue:newValue forKey:context];
+    [self setValueFor:context];
 }
 
 - (id)transformValue:(id)aValue withOptions:(CPDictionary)options
@@ -173,7 +174,7 @@ var CPBindingOperationAnd = 0,
         valueTransformer,
         placeholder;
 
-    switch (aValue || @"")
+    switch (aValue)
     {
         case CPMultipleValuesMarker:    return [options objectForKey:CPMultipleValuesPlaceholderBindingOption] || @"Multiple Values";
         
@@ -184,7 +185,8 @@ var CPBindingOperationAnd = 0,
 
                                         return [options objectForKey:CPNotApplicablePlaceholderBindingOption] || @"Not Applicable";
 
-        case @"":                       return [options objectForKey:CPNullPlaceholderBindingOption] || @"";
+        case nil:
+        case undefined:                 return [options objectForKey:CPNullPlaceholderBindingOption] || @"";
     }
 
     var valueTransformerName = [options objectForKey:CPValueTransformerNameBindingOption],
@@ -201,7 +203,7 @@ var CPBindingOperationAnd = 0,
     return aValue;
 }
 
-- (id)reverseTransformValue: (id)value withOptions: (NSDictionary *)options
+- (id)reverseTransformValue:(id)aValue withOptions: (CPDictionary)options
 {
     var valueTransformerName = [options objectForKey:CPValueTransformerNameBindingOption],
         valueTransformer;
@@ -224,6 +226,11 @@ var CPBindingOperationAnd = 0,
 + (void)exposeBinding:(CPString)aBinding
 {
     [CPKeyValueBinding exposeBinding:aBinding forClass:[self class]];
+}
+
++ (Class)classForBinding:(CPString)aBinding
+{
+    return CPKeyValueBinding;
 }
 
 - (CPArray)exposedBindings
@@ -256,10 +263,10 @@ var CPBindingOperationAnd = 0,
         return CPLog.error("Invalid object or path on "+self+" for "+aBinding);
 
     if (![[self exposedBindings] containsObject:aBinding])
-        return CPLog.error("No binding exposed on "+self+" for "+aBinding);
+        CPLog.warn("No binding exposed on "+self+" for "+aBinding);
 
     [self unbind:aBinding];
-    [[CPKeyValueBinding alloc] initWithBinding:aBinding name:aBinding to:anObject keyPath:aKeyPath options:options from:self];
+    [[[[self class] classForBinding:aBinding] alloc] initWithBinding:aBinding name:aBinding to:anObject keyPath:aKeyPath options:options from:self];
 }
 
 - (CPDictionary)infoForBinding:(CPString)aBinding
@@ -398,7 +405,7 @@ CPHiddenBinding         = @"CPHiddenBinding";
 CPSelectedIndexBinding  = @"CPSelectedIndexBinding";
 CPTextColorBinding      = @"CPTextColorBinding";
 CPToolTipBinding        = @"CPToolTipBinding";
-CPValueBinding          = @"objectValue";
+CPValueBinding          = @"value";
 
 //Binding options constants
 CPAllowsEditingMultipleValuesSelectionBindingOption = @"CPAllowsEditingMultipleValuesSelectionBindingOption";

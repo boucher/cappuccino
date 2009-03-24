@@ -44,9 +44,11 @@ _CPButtonBezelStyleHeights[CPHUDBezelStyle] = 20;
         _controlSize = CPRegularControlSize;
     
         var cell = [aCoder decodeObjectForKey:@"NSCell"];
-        
+
         _title = [cell title];
-        _isBordered = [cell isBordered];
+
+        [self setBordered:[cell isBordered]];
+
         _bezelStyle = [cell bezelStyle];
         
         // clean up:
@@ -87,11 +89,11 @@ _CPButtonBezelStyleHeights[CPHUDBezelStyle] = 20;
                 _bezelStyle = CPHUDBezelStyle;
         }
         
-        if (_CPButtonBezelStyleHeights[_bezelStyle] != undefined)
+        //if (_CPButtonBezelStyleHeights[_bezelStyle] != undefined)
         {
-            CPLog.warn("Adjusting CPButton height from " +_frame.size.height+ " / " + _bounds.size.height+" to " + _CPButtonBezelStyleHeights[_bezelStyle]);
-            _frame.size.height = _CPButtonBezelStyleHeights[_bezelStyle];
-            _bounds.size.height = _CPButtonBezelStyleHeights[_bezelStyle];
+            //CPLog.warn("Adjusting CPButton height from " +_frame.size.height+ " / " + _bounds.size.height+" to " + _CPButtonBezelStyleHeights[_bezelStyle]);
+            _frame.size.height = 24.0;//_CPButtonBezelStyleHeights[_bezelStyle];
+            _bounds.size.height = 24.0;//_CPButtonBezelStyleHeights[_bezelStyle];
         }
     }
     

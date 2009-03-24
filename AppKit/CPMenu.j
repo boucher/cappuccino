@@ -54,6 +54,8 @@ var _CPMenuBarVisible               = NO,
 */
 @implementation CPMenu : CPObject
 {
+    CPMenu          _supermenu;
+
     CPString        _title;
     
     CPMutableArray  _items;
@@ -61,7 +63,7 @@ var _CPMenuBarVisible               = NO,
     
     BOOL            _autoenablesItems;
     BOOL            _showsStateColumn;
-    
+
     id              _delegate;
     
     CPMenuItem      _highlightedIndex;
@@ -618,10 +620,10 @@ var _CPMenuBarVisible               = NO,
     
     if (!aFont)
         aFont = [CPFont systemFontOfSize:12.0];
-    
+
     var theWindow = [aView window],
         menuWindow = [_CPMenuWindow menuWindowWithMenu:aMenu font:aFont];
-    
+
     [menuWindow setDelegate:self];
     [menuWindow setBackgroundStyle:isForMenuBar ? _CPMenuWindowMenuBarBackgroundStyle : _CPMenuWindowPopUpBackgroundStyle];
 
@@ -633,28 +635,17 @@ var _CPMenuBarVisible               = NO,
 
 + (void)_menuWindowDidFinishTracking:(_CPMenuWindow)aMenuWindow highlightedItem:(CPMenuItem)aMenuItem
 {
+    var menu = [aMenuWindow menu];
+
     [_CPMenuWindow poolMenuWindow:aMenuWindow];
-    
-//    var index = [self indexOfItem:aMenuItem];
-    
-//    if (index == CPNotFound)
-//        return;
-    
-    var target = nil,
-        action = [aMenuItem action];
-    
-    if (!action)
-    {
-//        target = [self target];
-//        action = [self action];
-    }
-    
-    // FIXME: If [selectedItem target] == nil do we use our own target?
-    else
-        target = [aMenuItem target];
 
     if([aMenuItem isEnabled])
-        [CPApp sendAction:action to:target from:nil];
+        [CPApp sendAction:[aMenuItem action] to:[aMenuItem target] from:aMenuItem];
+
+    var delegate = [menu delegate];
+
+    if ([delegate respondsToSelector:@selector(menuDidClose:)])
+        [delegate menuDidClose:menu];
 }
 
 // Managing Display of State Column

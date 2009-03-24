@@ -33,7 +33,8 @@
 
 
 CPCibOwner              = @"CPCibOwner",
-CPCibTopLevelObjects    = @"CPCibTopLevelObjects";
+CPCibTopLevelObjects    = @"CPCibTopLevelObjects",
+CPCibReplacementClasses = @"CPCibReplacementClasses";
     
 var CPCibObjectDataKey  = @"CPCibObjectDataKey";
 
@@ -66,28 +67,42 @@ var CPCibObjectDataKey  = @"CPCibObjectDataKey";
 }
 
 - (BOOL)instantiateCibWithExternalNameTable:(CPDictionary)anExternalNameTable
-{   
+{
     var unarchiver = [[_CPCibKeyedUnarchiver alloc] initForReadingWithData:_data bundle:_bundle],
-        objectData = [unarchiver decodeObjectForKey:CPCibObjectDataKey];
+        replacementClasses = [anExternalNameTable objectForKey:CPCibReplacementClasses];
+
+    if (replacementClasses)
+    {
+        var key = nil,
+            keyEnumerator = [replacementClasses keyEnumerator];
+
+        while (key = [keyEnumerator nextObject])
+            [unarchiver setClass:[replacementClasses objectForKey:key] forClassName:key];
+    }
+
+    var objectData = [unarchiver decodeObjectForKey:CPCibObjectDataKey];
 
     if (!objectData || ![objectData isKindOfClass:[_CPCibObjectData class]])
         return NO;
-    
-    [objectData establishConnectionsWithExternalNameTable:anExternalNameTable];
-    
+
     var owner = [anExternalNameTable objectForKey:CPCibOwner],
         topLevelObjects = [anExternalNameTable objectForKey:CPCibTopLevelObjects];
-        
+
+    [objectData instantiateWithOwner:owner topLevelObjects:topLevelObjects]
+    [objectData establishConnectionsWithOwner:owner topLevelObjects:topLevelObjects];
+    [objectData awakeWithOwner:owner topLevelObjects:topLevelObjects];
+
     var menu;
+
     if ((menu = [objectData mainMenu]) != nil)
     {
          [CPApp setMainMenu:menu];
          [CPMenu setMenuBarVisible:YES];
     }
-    
-    if (topLevelObjects)
-        [topLevelObjects addObjectsFromArray:[objectData topLevelObjects]];
-    
+
+    // Display Visible Windows.
+    [objectData displayVisibleWindows];
+
     /*
 //    [objectData establishConnectionsWithOwner:owner topLevelObjects:topLevelObjects];
 //    [objectData cibInstantiateWithOwner:owner topLevelObjects:topLevelObjects];
@@ -135,6 +150,8 @@ var CPCibObjectDataKey  = @"CPCibObjectDataKey";
     // Display visible windows.
     
     return YES;*/
+
+    return YES;
 }
 
 - (BOOL)instantiateCibWithOwner:(id)anOwner topLevelObjects:(CPArray)topLevelObjects
